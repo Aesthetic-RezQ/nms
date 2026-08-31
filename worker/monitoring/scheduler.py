@@ -149,24 +149,42 @@ class MonitoringScheduler:
                     )
                     await db.commit()
 
-                    # 3. Handle Incident creation or resolution
+                    # 3. Handle Incident creation or resolution (Change2.md: NON-CRITICAL bypass)
                     if trans.event_type == "DOWN":
-                        reason = ping_res.error_message or f"Consecutive ping failures ({trans.consecutive_failures}/{fail_thresh})"
-                        await IncidentManager.handle_down_event(
-                            db=db,
-                            device_id=device_id,
-                            device_name=device_name,
-                            first_failure_at=trans.first_failure_at,
-                            failure_reason=reason,
-                            device_dict=device_data
-                        )
+                        # Check category policy: skip incident/alert for non-critical devices
+                        incident_enabled = device_data.get("incident_enabled", True)
+                        if not incident_enabled:
+                            # Workstation / non-critical: record status only, no incident
+                            logger.info(
+                                f"ℹ️ [NON-CRITICAL DOWN] Device: {device_name} |"
+                                f" Status recorded as DOWN, no incident/alert created"
+                            )
+                        else:
+                            reason = ping_res.error_message or f"Consecutive ping failures ({trans.consecutive_failures}/{fail_thresh})"
+                            await IncidentManager.handle_down_event(
+                                db=db,
+                                device_id=device_id,
+                                device_name=device_name,
+                                first_failure_at=trans.first_failure_at,
+                                failure_reason=reason,
+                                device_dict=device_data
+                            )
                     elif trans.event_type == "RECOVERED":
-                        await IncidentManager.handle_recovery_event(
-                            db=db,
-                            device_id=device_id,
-                            device_name=device_name,
-                            device_dict=device_data
-                        )
+                        # Check category policy: skip recovery alert for non-critical devices
+                        alert_enabled = device_data.get("alert_enabled", True)
+                        if not alert_enabled:
+                            # Workstation / non-critical: record recovery, no recovery alert
+                            logger.info(
+                                f"ℹ️ [NON-CRITICAL RECOVERY] Device: {device_name} |"
+                                f" Recovered, no recovery alert sent"
+                            )
+                        else:
+                            await IncidentManager.handle_recovery_event(
+                                db=db,
+                                device_id=device_id,
+                                device_name=device_name,
+                                device_dict=device_data
+                            )
 
             except Exception as e:
                 logger.error(f"Error persisting monitoring result for device {device_id}: {e}")
@@ -190,7 +208,13 @@ class MonitoringScheduler:
                 current_time = asyncio.get_event_loop().time()
                 default_interval = self.get_setting_int("default_monitoring_interval", worker_settings.DEFAULT_MONITORING_INTERVAL)
 
+                # Pre-fetch categories for policy lookup
+                from app.models.category import Category
+                cat_res = await db.execute(select(Category))
+                categories_map = {cat.id: cat for cat in cat_res.scalars().all()}
+
                 for dev in devices:
+                    category = categories_map.get(dev.category_id)
                     dev_dict = {
                         "id": dev.id,
                         "device_name": dev.device_name,
@@ -200,7 +224,12 @@ class MonitoringScheduler:
                         "failure_threshold": dev.failure_threshold,
                         "recovery_threshold": dev.recovery_threshold,
                         "monitoring_interval": dev.monitoring_interval,
-                        "current_status": dev.current_status
+                        "current_status": dev.current_status,
+                        # Category monitoring policy (Change2.md)
+                        "criticality": getattr(category, 'criticality', 'CRITICAL') if category else 'CRITICAL',
+                        "incident_enabled": getattr(category, 'incident_enabled', True) if category else True,
+                        "alert_enabled": getattr(category, 'alert_enabled', True) if category else True,
+                        "sla_enabled": getattr(category, 'sla_enabled', True) if category else True
                     }
                     interval = dev.monitoring_interval or default_interval
                     last_checked = self._last_checked_times.get(dev.id, 0.0)

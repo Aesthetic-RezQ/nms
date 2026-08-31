@@ -11,6 +11,22 @@ from fastapi.responses import PlainTextResponse
 
 router = APIRouter(prefix="/api/devices", tags=["Devices"])
 
+@router.get("/export", response_class=PlainTextResponse)
+async def export_devices(
+    status: str = None, category_id: int = None, group_id: int = None, location_id: int = None, vlan_id: int = None, search: str = None,
+    db: AsyncSession = Depends(get_db), _ = Depends(get_current_user)
+):
+    filters = DeviceListFilter(status=status, category_id=category_id, group_id=group_id, location_id=location_id, vlan_id=vlan_id, search=search)
+    csv_content = await DeviceService.export(db, filters)
+    return PlainTextResponse(content=csv_content, headers={"Content-Disposition": "attachment; filename=devices.csv"})
+
+@router.post("/import", response_model=DeviceBulkImportResult)
+async def import_devices(file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_user = Depends(require_admin)):
+    content = await file.read()
+    result = await DeviceService.bulk_import(db, content.decode("utf-8"))
+    await AuditService.create_log(db, user_id=current_user.id, username=current_user.username, action="DEVICE_IMPORT", object_type="device")
+    return result
+
 @router.get("", response_model=PaginatedResponse[DeviceRead])
 @router.get("/", response_model=PaginatedResponse[DeviceRead], include_in_schema=False)
 async def list_devices(
@@ -43,19 +59,3 @@ async def delete_device(device_id: UUID, db: AsyncSession = Depends(get_db), cur
     await DeviceService.delete(db, device_id)
     await AuditService.create_log(db, user_id=current_user.id, username=current_user.username, action="DEVICE_DELETED", object_type="device", object_id=str(device_id))
     return MessageResponse(message="Device deleted successfully")
-
-@router.post("/import", response_model=DeviceBulkImportResult)
-async def import_devices(file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_user = Depends(require_admin)):
-    content = await file.read()
-    result = await DeviceService.bulk_import(db, content.decode("utf-8"))
-    await AuditService.create_log(db, user_id=current_user.id, username=current_user.username, action="DEVICE_IMPORT", object_type="device")
-    return result
-
-@router.get("/export", response_class=PlainTextResponse)
-async def export_devices(
-    status: str = None, category_id: int = None, group_id: int = None, location_id: int = None, vlan_id: int = None, search: str = None,
-    db: AsyncSession = Depends(get_db), _ = Depends(get_current_user)
-):
-    filters = DeviceListFilter(status=status, category_id=category_id, group_id=group_id, location_id=location_id, vlan_id=vlan_id, search=search)
-    csv_content = await DeviceService.export(db, filters)
-    return PlainTextResponse(content=csv_content, headers={"Content-Disposition": "attachment; filename=devices.csv"})

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.models.base import Base
 from app.models.device import Device
 from app.models.incident import Incident
-from worker.monitoring.dependency import DependencyResolver
+from monitoring.dependency import DependencyResolver
 
 test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
 test_session_maker = async_sessionmaker(test_engine, expire_on_commit=False)

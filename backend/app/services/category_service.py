@@ -12,7 +12,13 @@ class CategoryService:
         query = select(Category, func.count(Device.id).label('device_count')).outerjoin(Device, Category.id == Device.category_id).group_by(Category.id).order_by(Category.display_order)
         result = await db.execute(query)
         rows = result.all()
-        return [{"id": c.Category.id, "name": c.Category.name, "description": c.Category.description, "icon": c.Category.icon, "display_order": c.Category.display_order, "created_at": c.Category.created_at, "device_count": c.device_count} for c in rows]
+        return [{
+            "id": c.Category.id, "name": c.Category.name, "description": c.Category.description,
+            "icon": c.Category.icon, "display_order": c.Category.display_order,
+            "criticality": c.Category.criticality, "incident_enabled": c.Category.incident_enabled,
+            "alert_enabled": c.Category.alert_enabled, "sla_enabled": c.Category.sla_enabled,
+            "created_at": c.Category.created_at, "device_count": c.device_count
+        } for c in rows]
 
     @staticmethod
     async def get_by_id(db: AsyncSession, category_id: int):
@@ -32,7 +38,11 @@ class CategoryService:
             name=data.name,
             description=data.description,
             icon=data.icon,
-            display_order=data.display_order
+            display_order=data.display_order,
+            criticality=data.criticality or "CRITICAL",
+            incident_enabled=data.incident_enabled if data.incident_enabled is not None else True,
+            alert_enabled=data.alert_enabled if data.alert_enabled is not None else True,
+            sla_enabled=data.sla_enabled if data.sla_enabled is not None else True
         )
         db.add(category)
         await db.commit()
@@ -55,6 +65,14 @@ class CategoryService:
             category.icon = data.icon
         if data.display_order is not None:
             category.display_order = data.display_order
+        if data.criticality is not None:
+            category.criticality = data.criticality
+        if data.incident_enabled is not None:
+            category.incident_enabled = data.incident_enabled
+        if data.alert_enabled is not None:
+            category.alert_enabled = data.alert_enabled
+        if data.sla_enabled is not None:
+            category.sla_enabled = data.sla_enabled
             
         await db.commit()
         await db.refresh(category)

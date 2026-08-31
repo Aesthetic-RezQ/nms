@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.models.base import Base
 from app.models.device import Device
 from app.models.incident import Incident
-from worker.monitoring.incident_manager import IncidentManager
+from monitoring.incident_manager import IncidentManager
 
 test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
 test_session_maker = async_sessionmaker(test_engine, expire_on_commit=False)

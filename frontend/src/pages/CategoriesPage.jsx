@@ -3,6 +3,7 @@ import { Button, Table, Card, Modal, Form } from 'react-bootstrap';
 import { MdAdd, MdEdit, MdDelete } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { get, post, put, del } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 export default function CategoriesPage() {
@@ -12,6 +13,8 @@ export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ id: null, name: '', description: '', icon: '', display_order: 0 });
   const [deleteId, setDeleteId] = useState(null);
+
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     fetchCategories();
@@ -71,9 +74,11 @@ export default function CategoriesPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Categories</h2>
-        <Button variant="primary" onClick={() => handleOpenModal()}>
-          <MdAdd className="me-1" /> Add Category
-        </Button>
+        {isAdmin && (
+          <Button variant="primary" onClick={() => handleOpenModal()}>
+            <MdAdd className="me-1" /> Add Category
+          </Button>
+        )}
       </div>
 
       <Card className="shadow-sm">
@@ -100,12 +105,16 @@ export default function CategoriesPage() {
                   <td>{c.description}</td>
                   <td>{c.display_order}</td>
                   <td>
-                    <Button variant="link" className="p-0 text-primary me-2" onClick={() => handleOpenModal(c)}>
-                      <MdEdit size={18} />
-                    </Button>
-                    <Button variant="link" className="p-0 text-danger" onClick={() => setDeleteId(c.id)}>
-                      <MdDelete size={18} />
-                    </Button>
+                    {isAdmin && (
+                      <>
+                        <Button variant="link" className="p-0 text-primary me-2" onClick={() => handleOpenModal(c)}>
+                          <MdEdit size={18} />
+                        </Button>
+                        <Button variant="link" className="p-0 text-danger" onClick={() => setDeleteId(c.id)}>
+                          <MdDelete size={18} />
+                        </Button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))

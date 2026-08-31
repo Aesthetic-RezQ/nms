@@ -145,7 +145,7 @@ export default function DeviceDetailPage() {
           <div>
             <h2 className="mb-0 d-flex align-items-center gap-2">
               {device.device_name}
-              <StatusBadge status={device.current_status} />
+              <StatusBadge status={device.current_status} criticality={device.criticality} />
             </h2>
             <div className="text-muted small">
               <code>{device.ip_address}</code> {device.hostname && `(${device.hostname})`}
@@ -250,6 +250,14 @@ export default function DeviceDetailPage() {
                   <tr>
                     <td className="text-muted fw-semibold" style={{ width: '35%' }}>IP Address</td>
                     <td><code>{device.ip_address}</code></td>
+                  </tr>
+                  <tr>
+                    <td className="text-muted fw-semibold">Criticality</td>
+                    <td>
+                      <span className={`badge ${device.criticality === 'NON_CRITICAL' ? 'bg-secondary' : 'bg-danger'}`}>
+                        {device.criticality || 'CRITICAL'}
+                      </span>
+                    </td>
                   </tr>
                   <tr>
                     <td className="text-muted fw-semibold">Hostname</td>

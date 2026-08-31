@@ -81,6 +81,10 @@ class DeviceRead(BaseModel):
     updated_at: datetime
     
     category_name: Optional[str] = None
+    criticality: Optional[str] = None
+    incident_enabled: Optional[bool] = None
+    alert_enabled: Optional[bool] = None
+    sla_enabled: Optional[bool] = None
     group_name: Optional[str] = None
     location_name: Optional[str] = None
     parent_device_name: Optional[str] = None

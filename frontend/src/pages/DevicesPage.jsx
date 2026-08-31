@@ -79,7 +79,7 @@ export default function DevicesPage() {
 
   const handleExportCSV = async () => {
     try {
-      const res = await get('/devices/export');
+      const res = await get('/devices/export', { responseType: 'text' });
       const blob = new Blob([res.data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

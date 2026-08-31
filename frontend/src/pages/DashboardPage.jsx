@@ -76,6 +76,8 @@ export default function DashboardPage() {
   }, []);
 
   const counts = summary?.status_counts || { total: 0, up: 0, down: 0, warning: 0, unknown: 0, maintenance: 0 };
+  const infraCounts = summary?.infrastructure_counts || { total: 0, up: 0, down: 0, warning: 0 };
+  const wsCounts = summary?.workstation_counts || { total: 0, up: 0, down: 0 };
   const workerStatus = summary?.worker_status;
 
   return (
@@ -125,12 +127,11 @@ export default function DashboardPage() {
               <h2 className="mb-0 text-success fw-bold">{counts.up}</h2>
             </Card.Body>
           </Card>
-        </Col>
-        <Col lg={2} md={4} sm={6}>
+        </Col>                <Col lg={2} md={4} sm={6}>
           <Card className="text-center border-0 shadow-sm py-2 border-start border-danger border-4">
             <Card.Body>
-              <div className="text-danger small text-uppercase fw-semibold">DOWN</div>
-              <h2 className="mb-0 text-danger fw-bold">{counts.down}</h2>
+              <div className="text-danger small text-uppercase fw-semibold">DOWN (Critical)</div>
+              <h2 className="mb-0 text-danger fw-bold">{infraCounts.down}</h2>
             </Card.Body>
           </Card>
         </Col>
@@ -149,12 +150,20 @@ export default function DashboardPage() {
               <h2 className="mb-0 text-secondary fw-bold">{counts.unknown}</h2>
             </Card.Body>
           </Card>
-        </Col>
-        <Col lg={2} md={4} sm={6}>
+        </Col>                <Col lg={2} md={4} sm={6}>
           <Card className="text-center border-0 shadow-sm py-2 border-start border-info border-4">
             <Card.Body>
               <div className="text-info small text-uppercase fw-semibold">MAINTENANCE</div>
               <h2 className="mb-0 text-info fw-bold">{counts.maintenance}</h2>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col lg={2} md={4} sm={6}>
+          <Card className="text-center border-0 shadow-sm py-2 border-start border-secondary border-4">
+            <Card.Body>
+              <div className="text-secondary small text-uppercase fw-semibold">WORKSTATIONS</div>
+              <h2 className="mb-0 fw-bold"><span className="text-success">{wsCounts.up}</span> / <span className="text-secondary">{wsCounts.total}</span></h2>
+              <div className="text-muted small">Offline: {wsCounts.down}</div>
             </Card.Body>
           </Card>
         </Col>
@@ -239,9 +248,9 @@ export default function DashboardPage() {
                   </h1>
                 </Col>
                 <Col sm={4}>
-                  <div className="text-muted small text-uppercase">Unresolved Incidents</div>
-                  <h1 className={`display-5 fw-bold ${counts.down > 0 ? 'text-danger' : 'text-muted'}`}>
-                    {counts.down}
+                  <div className="text-muted small text-uppercase">Critical Incidents</div>
+                  <h1 className={`display-5 fw-bold ${infraCounts.down > 0 ? 'text-danger' : 'text-muted'}`}>
+                    {infraCounts.down}
                   </h1>
                 </Col>
               </Row>

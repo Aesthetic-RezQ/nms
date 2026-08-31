@@ -12,6 +12,17 @@ class DeviceStatusCounts(BaseModel):
     unknown: int = 0
     maintenance: int = 0
 
+class InfrastructureCounts(BaseModel):
+    total: int = 0
+    up: int = 0
+    down: int = 0
+    warning: int = 0
+
+class WorkstationCounts(BaseModel):
+    total: int = 0
+    up: int = 0
+    down: int = 0
+
 class WorkerStatus(BaseModel):
     is_active: bool = True
     last_check_time: Optional[datetime] = None
@@ -21,6 +32,8 @@ class WorkerStatus(BaseModel):
 
 class DashboardSummaryResponse(BaseModel):
     status_counts: DeviceStatusCounts
+    infrastructure_counts: InfrastructureCounts = InfrastructureCounts()
+    workstation_counts: WorkstationCounts = WorkstationCounts()
     worker_status: WorkerStatus
     overall_availability_24h: float = 100.0
     recent_incidents: List[IncidentRead] = []

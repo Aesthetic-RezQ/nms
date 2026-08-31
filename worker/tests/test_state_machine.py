@@ -1,7 +1,7 @@
 import pytest
 import uuid
-from worker.monitoring.state_machine import DeviceStateMachine
-from worker.monitoring.icmp import PingResult
+from monitoring.state_machine import DeviceStateMachine
+from monitoring.icmp import PingResult
 
 @pytest.fixture
 def state_machine():

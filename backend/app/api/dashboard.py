@@ -21,7 +21,11 @@ logger = logging.getLogger("nms.api.dashboard")
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 async def get_dashboard_summary_data(db: AsyncSession) -> dict:
-    # 1. Device Counts
+    # Import Category model for criticality lookup
+    from app.models.category import Category
+    from sqlalchemy import outerjoin
+
+    # 1. Overall Device Counts (all devices)
     status_counts_res = await db.execute(
         select(
             func.count(Device.id).label("total"),
@@ -42,6 +46,42 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
     unknown = counts_row.unknown if counts_row else 0
     maintenance = counts_row.maintenance if counts_row else 0
     latest_check = counts_row.latest_check if counts_row else None
+
+    # 1b. Critical (infrastructure) vs Non-Critical (workstation) device counts
+    # (Change2.md: exclude NON_CRITICAL from incident counters)
+    infra_counts_res = await db.execute(
+        select(
+            func.count(Device.id).label("total"),
+            func.count(Device.id).filter(Device.current_status == "UP").label("up"),
+            func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
+            func.count(Device.id).filter(Device.current_status == "WARNING").label("warning"),
+        ).outerjoin(Category, Device.category_id == Category.id)
+        .where(Category.criticality != "NON_CRITICAL")
+    )
+    infra_row = infra_counts_res.first()
+
+    non_critical_counts_res = await db.execute(
+        select(
+            func.count(Device.id).label("total"),
+            func.count(Device.id).filter(Device.current_status == "UP").label("up"),
+            func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
+        ).outerjoin(Category, Device.category_id == Category.id)
+        .where(Category.criticality == "NON_CRITICAL")
+    )
+    nc_row = non_critical_counts_res.first()
+
+    infrastructure_counts = {
+        "total": infra_row.total if infra_row else 0,
+        "up": infra_row.up if infra_row else 0,
+        "down": infra_row.down if infra_row else 0,
+        "warning": infra_row.warning if infra_row else 0
+    }
+
+    workstation_counts = {
+        "total": nc_row.total if nc_row else 0,
+        "up": nc_row.up if nc_row else 0,
+        "down": nc_row.down if nc_row else 0
+    }
 
     # 2. Worker health & stale detection (PRD §46)
     now = datetime.now(timezone.utc)
@@ -90,6 +130,8 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
             "unknown": unknown,
             "maintenance": maintenance
         },
+        "infrastructure_counts": infrastructure_counts,
+        "workstation_counts": workstation_counts,
         "worker_status": {
             "is_active": not is_stale,
             "last_check_time": latest_check,

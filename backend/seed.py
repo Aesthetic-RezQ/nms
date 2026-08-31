@@ -19,11 +19,28 @@ async def seed():
         if not admin.scalars().first():
             db.add(User(username="admin", email="admin@nms.local", password_hash=hash_password("admin"), role="admin", full_name="System Admin"))
             
+        # Standard infrastructure categories (CRITICAL by default)
         categories = ["Firewall", "Router", "Core Switch", "Distribution Switch", "Access Switch", "Server", "Virtual Machine", "Access Point", "CCTV", "NVR", "Printer", "PLC", "UPS", "Storage", "IoT", "Other"]
         for c in categories:
             res = await db.execute(select(Category).where(Category.name == c))
             if not res.scalars().first():
                 db.add(Category(name=c))
+
+        # Non-critical categories (Change2.md: Workstations)
+        non_critical_categories = {
+            "Workstation": "Workstations are not expected to stay online 24/7. DOWN status does not trigger incidents or alerts."
+        }
+        for name, desc in non_critical_categories.items():
+            res = await db.execute(select(Category).where(Category.name == name))
+            if not res.scalars().first():
+                db.add(Category(
+                    name=name,
+                    description=desc,
+                    criticality="NON_CRITICAL",
+                    incident_enabled=False,
+                    alert_enabled=False,
+                    sla_enabled=False
+                ))
                 
         groups = ["Network Infrastructure", "Servers", "CCTV System", "WiFi Infrastructure", "OT Network", "Office Equipment"]
         for g in groups:

@@ -17,7 +17,11 @@ class DeviceService:
     async def get_all(db: AsyncSession, page: int = 1, page_size: int = 10, filters: Optional[DeviceListFilter] = None):
         query = select(
             Device, 
-            Category.name.label('category_name'), 
+            Category.name.label('category_name'),
+            Category.criticality.label('category_criticality'),
+            Category.incident_enabled.label('category_incident_enabled'),
+            Category.alert_enabled.label('category_alert_enabled'),
+            Category.sla_enabled.label('category_sla_enabled'),
             DeviceGroup.name.label('group_name'), 
             Location.name.label('location_name')
         ).outerjoin(Category, Device.category_id == Category.id)\
@@ -57,6 +61,10 @@ class DeviceService:
         for row in result.all():
             device_dict = {c.name: getattr(row.Device, c.name) for c in row.Device.__table__.columns}
             device_dict['category_name'] = row.category_name
+            device_dict['criticality'] = row.category_criticality or 'CRITICAL'
+            device_dict['incident_enabled'] = row.category_incident_enabled if row.category_incident_enabled is not None else True
+            device_dict['alert_enabled'] = row.category_alert_enabled if row.category_alert_enabled is not None else True
+            device_dict['sla_enabled'] = row.category_sla_enabled if row.category_sla_enabled is not None else True
             device_dict['group_name'] = row.group_name
             device_dict['location_name'] = row.location_name
             data.append(device_dict)
@@ -73,7 +81,11 @@ class DeviceService:
     async def get_by_id(db: AsyncSession, device_id: UUID):
         query = select(
             Device, 
-            Category.name.label('category_name'), 
+            Category.name.label('category_name'),
+            Category.criticality.label('category_criticality'),
+            Category.incident_enabled.label('category_incident_enabled'),
+            Category.alert_enabled.label('category_alert_enabled'),
+            Category.sla_enabled.label('category_sla_enabled'),
             DeviceGroup.name.label('group_name'), 
             Location.name.label('location_name')
         ).outerjoin(Category, Device.category_id == Category.id)\
@@ -88,6 +100,10 @@ class DeviceService:
             
         device_dict = {c.name: getattr(row.Device, c.name) for c in row.Device.__table__.columns}
         device_dict['category_name'] = row.category_name
+        device_dict['criticality'] = row.category_criticality or 'CRITICAL'
+        device_dict['incident_enabled'] = row.category_incident_enabled if row.category_incident_enabled is not None else True
+        device_dict['alert_enabled'] = row.category_alert_enabled if row.category_alert_enabled is not None else True
+        device_dict['sla_enabled'] = row.category_sla_enabled if row.category_sla_enabled is not None else True
         device_dict['group_name'] = row.group_name
         device_dict['location_name'] = row.location_name
         return device_dict
