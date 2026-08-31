@@ -45,17 +45,33 @@ export default function DeviceDetailPage() {
       setLoading(true);
       setError(null);
       
-      const [devRes, metRes, histRes, incRes] = await Promise.all([
+      const [devRes, metRes, incRes] = await Promise.all([
         get(`/devices/${id}`),
         get(`/devices/${id}/metrics`),
-        get(`/devices/${id}/history?hours=${timeRange}&limit=300`),
-        get(`/devices/${id}/incidents?page=1&page_size=10`)
+        get(`/devices/${id}/incidents?page=1&page_size=10`),
       ]);
+
+      // For 1h use raw history; for 24h/7d use aggregated latency-history
+      let histData;
+      if (timeRange <= 1) {
+        const histRes = await get(`/devices/${id}/history?hours=${timeRange}&limit=500`);
+        histData = [...histRes.data].reverse().map(item => ({
+          timestamp: item.checked_at,
+          latency: item.latency,
+          status: item.status,
+        }));
+      } else {
+        const latRes = await get(`/devices/${id}/latency-history?hours=${timeRange}`);
+        histData = latRes.data.timestamps.map((ts, i) => ({
+          timestamp: ts,
+          latency: latRes.data.latencies[i],
+          status: latRes.data.statuses[i],
+        }));
+      }
 
       setDevice(devRes.data);
       setMetrics(metRes.data);
-      // History is returned newest-first; reverse for chronological left-to-right chart
-      setHistory([...histRes.data].reverse());
+      setHistory(histData);
       setIncidents(incRes.data.data || []);
     } catch (err) {
       console.error("Failed to load device details", err);
@@ -93,7 +109,7 @@ export default function DeviceDetailPage() {
   }
 
   // Chart dataset preparation
-  const chartLabels = history.map(item => dayjs(item.checked_at).format(timeRange <= 24 ? 'HH:mm:ss' : 'MMM DD HH:mm'));
+  const chartLabels = history.map(item => dayjs(item.timestamp).format(timeRange <= 24 ? 'HH:mm' : 'MMM DD HH:mm'));
   const chartData = {
     labels: chartLabels,
     datasets: [
