@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Form, Button, Alert, Container, Spinner } from 'react-bootstrap';
-import { MdNetworkCheck } from 'react-icons/md';
+
 import { useAuth } from './AuthContext';
 
 export default function LoginPage() {
@@ -31,8 +31,8 @@ export default function LoginPage() {
       <Container className="d-flex justify-content-center">
         <Card className="login-card p-4">
           <div className="text-center mb-4">
-            <MdNetworkCheck size={48} color="#1a1a2e" />
-            <h3 className="mt-2 text-dark">NMS Login</h3>
+            <img src="/logo.jpg" alt="NMS Logo" style={{ height: '64px', width: 'auto', objectFit: 'contain' }} />
+            <h3 className="mt-3 text-dark">NMS Login</h3>
             <p className="text-muted">Network Monitoring System</p>
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
