@@ -40,9 +40,9 @@ class Device(Base, TimestampMixin):
     
     current_latency: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    category = relationship("Category", back_populates="devices")
-    group = relationship("DeviceGroup", back_populates="devices")
-    location = relationship("Location", back_populates="devices")
+    category = relationship("Category", back_populates="devices", passive_deletes=True)
+    group = relationship("DeviceGroup", back_populates="devices", passive_deletes=True)
+    location = relationship("Location", back_populates="devices", passive_deletes=True)
     
-    parent_device = relationship("Device", remote_side=[id], back_populates="children")
-    children = relationship("Device", back_populates="parent_device")
+    parent_device = relationship("Device", remote_side=[id], back_populates="children", passive_deletes=True)
+    children = relationship("Device", back_populates="parent_device", passive_deletes=True)

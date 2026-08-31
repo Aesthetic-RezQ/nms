@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
 from sqlalchemy import String, Text, ForeignKey, Boolean, Float, DateTime, BigInteger, Index
 from sqlalchemy.dialects.postgresql import UUID
 from app.models.base import Base
@@ -19,7 +19,7 @@ class MonitoringResult(Base):
     is_successful: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    device = relationship("Device", backref="monitoring_results")
+    device = relationship("Device", backref=backref("monitoring_results", passive_deletes=True))
 
     __table_args__ = (
         Index("ix_monitoring_results_device_checked", "device_id", "checked_at"),
