@@ -1,0 +1,12 @@
+icmplib>=3.0.4
+asyncpg>=0.30.0
+sqlalchemy[asyncio]>=2.0.36
+pydantic>=2.10.4
+pydantic-settings>=2.7.1
+pytz>=2024.2
+httpx>=0.28.1
+bcrypt>=4.2.1
+python-jose[cryptography]>=3.3.0
+pytest>=8.3.4
+pytest-asyncio>=0.25.0
+aiosqlite>=0.20.0

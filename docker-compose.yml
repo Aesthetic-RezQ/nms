@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nms-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: nms_backend
+    ports:
+      - "8090:8090"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8090 --reload --proxy-headers --forwarded-allow-ips='*'
+    volumes:
+      - ./backend:/app
+    networks:
+      - nms-net
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./worker
+    container_name: nms_worker
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    cap_add:
+      - NET_RAW
+    command: python main.py
+    volumes:
+      - ./worker:/app
+      - ./backend/app:/app/app
+    networks:
+      - nms-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: nms_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - nms-net
+    restart: unless-stopped
+
+networks:
+  nms-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
