@@ -5,7 +5,7 @@ A comprehensive LAN Network Monitoring System designed to track network devices,
 
 ## Tech Stack
 - **Backend:** FastAPI (Python)
-- **Frontend:** React (TypeScript)
+- **Frontend:** React (JavaScript), BIC Internal IT Web UI Framework: v1.0.0
 - **Database:** PostgreSQL
 - **Worker:** Python asyncio
 - **Deployment:** Docker & Docker Compose
@@ -38,6 +38,17 @@ A comprehensive LAN Network Monitoring System designed to track network devices,
 1. Navigate to `./frontend`
 2. Install dependencies: `npm install`
 3. Start development server: `npm run dev`
+
+The frontend imports the shared `/css/bic-*.css` files in framework order. Follow
+`DESIGN_SYSTEM.md` for all UI changes. React bindings live in
+`frontend/src/components/bic`; reusable styles belong in `css/bic-components.css`
+and design constants in `css/bic-tokens.css`. There is no page-specific stylesheet.
+The frontend Docker build uses the repository root as its context to include the
+same shared framework files: `docker build -f frontend/Dockerfile .`.
+
+Before shipping UI changes, run `npm run check:design` and `npm run build` from
+`frontend`. Verify layouts at 1366×768 and 768px wide, including keyboard navigation
+and form dialogs.
 
 ## Default Login
 - **Username:** admin

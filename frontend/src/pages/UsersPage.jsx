@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, Card, Modal, Form, Badge } from 'react-bootstrap';
+import { Button, Table, Card, Modal, Form, Badge } from '../components/bic';
 import { MdAdd, MdEdit, MdDelete } from 'react-icons/md';
-import { toast } from 'react-toastify';
+import { toast } from '../components/bic/Notifications';
 import { get, post, put, del } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -79,51 +79,50 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Users</h2>
+      <div className="bic-page-header">
+        <h1 className="bic-page-title">Users</h1>
         <Button variant="primary" onClick={() => handleOpenModal()}>
-          <MdAdd className="me-1" /> Add User
+          <MdAdd className="bic-mr-1" /> Add User
         </Button>
       </div>
 
-      <Card className="shadow-sm">
-        <Table responsive hover className="mb-0">
-          <thead className="table-light">
+      <Card>
+        <Table responsive hover className="bic-mb-0">
+          <thead>
             <tr>
               <th>Username</th>
               <th>Email</th>
               <th>Full Name</th>
               <th>Role</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th className="bic-text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" className="text-center py-4">Loading...</td></tr>
+              <tr><td colSpan="6" className="bic-empty">Loading...</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-4">No users found</td></tr>
+              <tr><td colSpan="6" className="bic-empty">No users found</td></tr>
             ) : (
               users.map(u => (
                 <tr key={u.id}>
                   <td>{u.username}</td>
                   <td>{u.email}</td>
                   <td>{u.full_name}</td>
-                  <td><Badge bg="secondary">{u.role}</Badge></td>
+                  <td><Badge bg="info">{u.role}</Badge></td>
                   <td>
-                    {u.is_active ? <Badge bg="success">Active</Badge> : <Badge bg="danger">Inactive</Badge>}
+                    {u.is_active ? <Badge bg="success">Active</Badge> : <Badge bg="info">Inactive</Badge>}
                   </td>
-                  <td>
-                    <Button variant="link" className="p-0 text-primary me-2" onClick={() => handleOpenModal(u)}>
-                      <MdEdit size={18} />
+                  <td className="bic-text-right">
+                    <Button variant="secondary" size="sm" className="bic-mr-2" title="Edit user" onClick={() => handleOpenModal(u)}>
+                      <MdEdit />
                     </Button>
                     <Button 
-                      variant="link" 
-                      className={`p-0 ${u.id === currentUser.id ? 'text-muted' : 'text-danger'}`} 
+                      variant="danger" size="sm" title="Delete user"
                       disabled={u.id === currentUser.id}
                       onClick={() => setDeleteId(u.id)}
                     >
-                      <MdDelete size={18} />
+                      <MdDelete />
                     </Button>
                   </td>
                 </tr>
@@ -139,31 +138,31 @@ export default function UsersPage() {
             <Modal.Title>{formData.id ? 'Edit User' : 'Add User'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Username *</Form.Label>
               <Form.Control required value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} disabled={!!formData.id} />
             </Form.Group>
             {!formData.id && (
-              <Form.Group className="mb-3">
+              <Form.Group className="bic-mb-4">
                 <Form.Label>Password *</Form.Label>
                 <Form.Control required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
               </Form.Group>
             )}
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Email *</Form.Label>
               <Form.Control required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Full Name</Form.Label>
               <Form.Control value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} />
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Role</Form.Label>
               <Form.Select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                 {USER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
               </Form.Select>
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Check type="checkbox" label="Active" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} />
             </Form.Group>
           </Modal.Body>

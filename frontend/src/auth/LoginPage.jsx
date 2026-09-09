@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Form, Button, Alert, Container, Spinner } from 'react-bootstrap';
+import { Card, Form, Button, Alert, Spinner } from '../components/bic';
 
 import { useAuth } from './AuthContext';
 
@@ -27,42 +27,44 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <Container className="d-flex justify-content-center">
-        <Card className="login-card p-4">
-          <div className="text-center mb-4">
-            <img src="/logo.jpg" alt="NMS Logo" style={{ height: '64px', width: 'auto', objectFit: 'contain' }} />
-            <h3 className="mt-3 text-dark">NMS Login</h3>
-            <p className="text-muted">Network Monitoring System</p>
+    <main className="bic-auth">
+        <Card className="bic-auth-card">
+          <Card.Body>
+          <div className="bic-text-center bic-mb-6">
+            <img src="/logo.jpg" alt="BIC" className="bic-auth-logo" />
+            <h1 className="bic-page-title">NMS Login</h1>
+            <p className="bic-page-subtitle">Network Monitoring System</p>
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="username">
+            <Form.Group controlId="username">
               <Form.Label>Username</Form.Label>
               <Form.Control 
                 type="text" 
+                autoComplete="username"
                 placeholder="Enter username" 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
                 required 
               />
             </Form.Group>
-            <Form.Group className="mb-4" controlId="password">
+            <Form.Group controlId="password">
               <Form.Label>Password</Form.Label>
               <Form.Control 
                 type="password" 
+                autoComplete="current-password"
                 placeholder="Password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
               />
             </Form.Group>
-            <Button variant="primary" type="submit" className="w-100 py-2" disabled={loading}>
-              {loading ? <Spinner animation="border" size="sm" /> : 'Login'}
+            <Button variant="primary" type="submit" className="bic-w-full" disabled={loading}>
+              {loading ? <><Spinner size="sm" /> Signing in...</> : 'Login'}
             </Button>
           </Form>
+          </Card.Body>
         </Card>
-      </Container>
-    </div>
+    </main>
   );
 }

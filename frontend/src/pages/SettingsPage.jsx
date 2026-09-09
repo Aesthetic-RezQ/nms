@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Button, Row, Col, Table, Badge, Spinner, Alert, Tab, Nav } from 'react-bootstrap';
-import { toast } from 'react-toastify';
+import { Card, Form, Button, Row, Col, Table, Badge, Spinner, Alert } from '../components/bic';
+import { toast } from '../components/bic/Notifications';
 import { MdSave, MdSend, MdEmail, MdSendToMobile, MdSettings, MdHistory, MdRefresh } from 'react-icons/md';
 import { get, put, post } from '../api/client';
 import dayjs from 'dayjs';
@@ -137,34 +137,34 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-2 text-muted">Loading settings...</p>
+      <div className="bic-text-center bic-py-10">
+        <Spinner />
+        <p className="bic-mt-2 bic-text-secondary">Loading settings...</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div className="bic-page-header">
         <div>
-          <h2 className="mb-0 d-flex align-items-center gap-2">
+          <h1 className="bic-page-title bic-flex bic-items-center bic-gap-2">
             <MdSettings /> System Settings & Notifications
-          </h2>
-          <p className="text-muted small mb-0">Configure monitoring parameters, alert channels, and retention rules.</p>
+          </h1>
+          <p className="bic-page-subtitle">Configure monitoring parameters, alert channels, and retention rules.</p>
         </div>
       </div>
 
       <Form onSubmit={handleSave}>
-        <Row className="g-4 mb-4">
+        <Row className="bic-gap-6 bic-mb-6">
           {/* General Monitoring Thresholds */}
           <Col lg={6}>
-            <Card className="border-0 shadow-sm h-100">
-              <Card.Header className="bg-white py-3">
-                <h5 className="mb-0">Monitoring Engine Thresholds</h5>
+            <Card className="bic-h-full">
+              <Card.Header>
+                <h2 className="bic-section-title bic-mb-0">Monitoring Engine Thresholds</h2>
               </Card.Header>
               <Card.Body>
-                <Row className="g-3">
+                <Row>
                   <Col sm={6}>
                     <Form.Group>
                       <Form.Label>Default Interval (seconds)</Form.Label>
@@ -253,11 +253,11 @@ export default function SettingsPage() {
 
           {/* Telegram Notification Channel */}
           <Col lg={6}>
-            <Card className="border-0 shadow-sm mb-4">
-              <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 d-flex align-items-center gap-2">
-                  <MdSendToMobile className="text-primary" /> Telegram Bot Alerts
-                </h5>
+            <Card className="bic-mb-6">
+              <Card.Header>
+                <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
+                  <MdSendToMobile className="bic-text-brand" /> Telegram Bot Alerts
+                </h2>
                 <Form.Check
                   type="switch"
                   id="tg-switch"
@@ -268,7 +268,7 @@ export default function SettingsPage() {
                 />
               </Card.Header>
               <Card.Body>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
                   <Form.Label>Telegram Bot Token</Form.Label>
                   <Form.Control
                     type="password"
@@ -277,9 +277,9 @@ export default function SettingsPage() {
                     value={settings.telegram_bot_token}
                     onChange={handleChange}
                   />
-                  <Form.Text className="text-muted">Obtained from @BotFather on Telegram</Form.Text>
+                  <Form.Text className="bic-text-secondary">Obtained from @BotFather on Telegram</Form.Text>
                 </Form.Group>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
                   <Form.Label>Telegram Chat / Group ID</Form.Label>
                   <Form.Control
                     type="text"
@@ -290,23 +290,23 @@ export default function SettingsPage() {
                   />
                 </Form.Group>
                 <Button
-                  variant="outline-primary"
+                  variant="secondary"
                   size="sm"
                   onClick={handleTestTelegram}
                   disabled={testingTg || settings.telegram_enabled !== 'true' || !settings.telegram_bot_token}
                 >
-                  <MdSend className="me-1" />
+                  <MdSend className="bic-mr-1" />
                   {testingTg ? 'Testing...' : 'Send Test Telegram Alert'}
                 </Button>
               </Card.Body>
             </Card>
 
             {/* Email SMTP Channel */}
-            <Card className="border-0 shadow-sm">
-              <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 d-flex align-items-center gap-2">
-                  <MdEmail className="text-danger" /> Email (SMTP) Alerts
-                </h5>
+            <Card>
+              <Card.Header>
+                <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
+                  <MdEmail /> Email (SMTP) Alerts
+                </h2>
                 <Form.Check
                   type="switch"
                   id="smtp-switch"
@@ -317,7 +317,7 @@ export default function SettingsPage() {
                 />
               </Card.Header>
               <Card.Body>
-                <Row className="g-2 mb-3">
+                <Row className="bic-gap-2 bic-mb-4">
                   <Col sm={8}>
                     <Form.Group>
                       <Form.Label>SMTP Host</Form.Label>
@@ -342,7 +342,7 @@ export default function SettingsPage() {
                     </Form.Group>
                   </Col>
                 </Row>
-                <Row className="g-2 mb-3">
+                <Row className="bic-gap-2 bic-mb-4">
                   <Col sm={6}>
                     <Form.Group>
                       <Form.Label>SMTP User</Form.Label>
@@ -366,7 +366,18 @@ export default function SettingsPage() {
                     </Form.Group>
                   </Col>
                 </Row>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
+                  <Form.Label>From Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="smtp_from_email"
+                    placeholder="your-account@gmail.com"
+                    value={settings.smtp_from_email}
+                    onChange={handleChange}
+                  />
+                  <Form.Text className="bic-text-secondary">Use the same Gmail address as the authenticated SMTP account.</Form.Text>
+                </Form.Group>
+                <Form.Group className="bic-mb-4">
                   <Form.Label>Recipient Emails (Comma-separated)</Form.Label>
                   <Form.Control
                     type="text"
@@ -377,12 +388,12 @@ export default function SettingsPage() {
                   />
                 </Form.Group>
                 <Button
-                  variant="outline-danger"
+                  variant="secondary"
                   size="sm"
                   onClick={handleTestEmail}
                   disabled={testingSmtp || settings.smtp_enabled !== 'true' || !settings.smtp_host}
                 >
-                  <MdSend className="me-1" />
+                  <MdSend className="bic-mr-1" />
                   {testingSmtp ? 'Sending...' : 'Send Test Email'}
                 </Button>
               </Card.Body>
@@ -390,27 +401,27 @@ export default function SettingsPage() {
           </Col>
         </Row>
 
-        <div className="d-flex justify-content-end mb-4">
+        <div className="bic-flex bic-justify-end bic-mb-6">
           <Button variant="primary" size="lg" type="submit" disabled={saving}>
-            <MdSave className="me-2" />
+            <MdSave className="bic-mr-2" />
             {saving ? 'Saving Changes...' : 'Save Configuration'}
           </Button>
         </div>
       </Form>
 
       {/* Recent Notification Logs */}
-      <Card className="border-0 shadow-sm mb-5">
-        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-          <h5 className="mb-0 d-flex align-items-center gap-2">
+      <Card className="bic-mb-10">
+        <Card.Header>
+          <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
             <MdHistory /> Notification Activity Log
-          </h5>
-          <Button variant="outline-secondary" size="sm" onClick={fetchNotificationLogs} disabled={loadingLogs}>
+          </h2>
+          <Button variant="secondary" size="sm" onClick={fetchNotificationLogs} disabled={loadingLogs}>
             <MdRefresh /> Refresh Logs
           </Button>
         </Card.Header>
-        <Card.Body className="p-0">
-          <Table responsive hover className="mb-0 align-middle">
-            <thead className="table-light">
+        <Card.Body className="bic-p-0">
+          <Table responsive hover className="bic-mb-0">
+            <thead>
               <tr>
                 <th>Channel</th>
                 <th>Event Type</th>
@@ -425,21 +436,21 @@ export default function SettingsPage() {
                 logs.map((log) => (
                   <tr key={log.id}>
                     <td>
-                      <Badge bg={log.channel === 'TELEGRAM' ? 'primary' : 'danger'}>
+                      <Badge bg="info">
                         {log.channel}
                       </Badge>
                     </td>
-                    <td><strong className="small">{log.event_type}</strong></td>
-                    <td className="small"><code>{log.recipient}</code></td>
+                    <td><strong className="bic-text-sm">{log.event_type}</strong></td>
+                    <td className="bic-text-sm"><code>{log.recipient}</code></td>
                     <td>
-                      <Badge bg={log.status === 'SENT' ? 'success' : (log.status === 'FAILED' ? 'danger' : 'secondary')}>
+                      <Badge bg={log.status === 'SENT' ? 'success' : (log.status === 'FAILED' ? 'danger' : 'info')}>
                         {log.status}
                       </Badge>
                     </td>
-                    <td className="small text-muted">{dayjs(log.sent_at).format('YYYY-MM-DD HH:mm:ss')}</td>
-                    <td className="small text-muted" style={{ maxWidth: '250px' }}>
+                    <td className="bic-text-sm bic-text-secondary">{dayjs(log.sent_at).format('YYYY-MM-DD HH:mm:ss')}</td>
+                    <td className="bic-text-sm bic-text-secondary bic-table-note">
                       {log.error_message ? (
-                        <span className="text-danger">{log.error_message}</span>
+                        <span className="bic-text-danger">{log.error_message}</span>
                       ) : (
                         <span>{log.subject || 'Message delivered'}</span>
                       )}
@@ -448,7 +459,7 @@ export default function SettingsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-muted">
+                  <td colSpan="6" className="bic-empty">
                     No notification activities logged yet.
                   </td>
                 </tr>

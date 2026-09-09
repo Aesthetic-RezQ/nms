@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Row, Col, Spinner } from 'react-bootstrap';
-import { toast } from 'react-toastify';
+import { Form, Button, Card, Row, Col, Spinner } from '../components/bic';
+import { toast } from '../components/bic/Notifications';
 import { get, post, put } from '../api/client';
 
 export default function DeviceFormPage() {
@@ -143,21 +143,21 @@ export default function DeviceFormPage() {
     }
   };
 
-  if (loading) return <div className="text-center p-5"><Spinner animation="border" /></div>;
+  if (loading) return <div className="bic-text-center bic-p-10"><Spinner /></div>;
 
   return (
     <div>
-      <h2 className="mb-4">{isEdit ? 'Edit Device' : 'Add Device'}</h2>
+      <div className="bic-page-header"><h1 className="bic-page-title">{isEdit ? 'Edit Device' : 'Add Device'}</h1></div>
       
       <Form onSubmit={handleSubmit}>
         <Row>
           <Col lg={8}>
-            <Card className="mb-4 shadow-sm">
-              <Card.Header className="bg-white">
-                <h5 className="mb-0">Basic Information</h5>
+            <Card className="bic-mb-6">
+              <Card.Header>
+                <h2 className="bic-section-title bic-mb-0">Basic Information</h2>
               </Card.Header>
               <Card.Body>
-                <Row className="g-3">
+                <Row>
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label>Device Name *</Form.Label>
@@ -223,12 +223,12 @@ export default function DeviceFormPage() {
               </Card.Body>
             </Card>
 
-            <Card className="mb-4 shadow-sm">
-              <Card.Header className="bg-white">
-                <h5 className="mb-0">Classification & Location</h5>
+            <Card className="bic-mb-6">
+              <Card.Header>
+                <h2 className="bic-section-title bic-mb-0">Classification & Location</h2>
               </Card.Header>
               <Card.Body>
-                <Row className="g-3">
+                <Row>
                   <Col md={4}>
                     <Form.Group>
                       <Form.Label>Category</Form.Label>
@@ -285,12 +285,12 @@ export default function DeviceFormPage() {
           </Col>
 
           <Col lg={4}>
-            <Card className="shadow-sm mb-4">
-              <Card.Header className="bg-white">
-                <h5 className="mb-0">Monitoring Settings</h5>
+            <Card className="bic-mb-6">
+              <Card.Header>
+                <h2 className="bic-section-title bic-mb-0">Monitoring Settings</h2>
               </Card.Header>
               <Card.Body>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
                   <Form.Check 
                     type="switch" 
                     id="monitoring-switch" 
@@ -300,19 +300,19 @@ export default function DeviceFormPage() {
                     onChange={handleChange} 
                   />
                 </Form.Group>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
                   <Form.Label>Interval (seconds)</Form.Label>
                   <Form.Control type="number" name="monitoring_interval" placeholder="Default: 15" value={formData.monitoring_interval} onChange={handleChange} />
                 </Form.Group>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
                   <Form.Label>Ping Timeout (seconds)</Form.Label>
                   <Form.Control type="number" name="ping_timeout" placeholder="Default: 2" value={formData.ping_timeout} onChange={handleChange} />
                 </Form.Group>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
                   <Form.Label>Failure Threshold (pings)</Form.Label>
                   <Form.Control type="number" name="failure_threshold" placeholder="Default: 3" value={formData.failure_threshold} onChange={handleChange} />
                 </Form.Group>
-                <Form.Group className="mb-3">
+                <Form.Group className="bic-mb-4">
                   <Form.Label>Recovery Threshold (pings)</Form.Label>
                   <Form.Control type="number" name="recovery_threshold" placeholder="Default: 2" value={formData.recovery_threshold} onChange={handleChange} />
                 </Form.Group>
@@ -321,9 +321,9 @@ export default function DeviceFormPage() {
           </Col>
         </Row>
         
-        <div className="d-flex gap-2 mb-5">
+        <div className="bic-flex bic-gap-2 bic-mb-10">
           <Button variant="primary" type="submit" disabled={saving}>
-            {saving ? <Spinner animation="border" size="sm" className="me-2" /> : null}
+            {saving ? <Spinner size="sm" className="bic-mr-2" /> : null}
             Save Device
           </Button>
           <Button variant="secondary" onClick={() => navigate('/devices')} disabled={saving}>

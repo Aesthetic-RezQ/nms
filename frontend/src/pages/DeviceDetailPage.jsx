@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Card, Row, Col, Button, Table, ButtonGroup, Spinner, Alert, Badge } from 'react-bootstrap';
+import { Card, Row, Col, Button, Table, ButtonGroup, Spinner, Alert, Badge, Stat } from '../components/bic';
 import { MdArrowBack, MdEdit, MdWarning, MdCheckCircle, MdSpeed, MdAccessTime, MdInfo } from 'react-icons/md';
 import { get } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
@@ -89,9 +89,9 @@ export default function DeviceDetailPage() {
 
   if (loading && !device) {
     return (
-      <div className="text-center py-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-2 text-muted">Loading device analytics...</p>
+      <div className="bic-text-center bic-py-10">
+        <Spinner />
+        <p className="bic-mt-2 bic-text-secondary">Loading device analytics...</p>
       </div>
     );
   }
@@ -101,13 +101,16 @@ export default function DeviceDetailPage() {
       <Alert variant="danger">
         <Alert.Heading>Error</Alert.Heading>
         <p>{error}</p>
-        <Link to="/devices" className="btn btn-outline-danger btn-sm">
+        <Link to="/devices" className="bic-btn bic-btn-secondary bic-btn-sm">
           <MdArrowBack /> Back to Devices
         </Link>
       </Alert>
     );
   }
 
+  // Canvas drawing reads the same BIC tokens as the surrounding UI.
+  const styles = getComputedStyle(document.documentElement);
+  const token = name => styles.getPropertyValue('--bic-' + name).trim();
   // Chart dataset preparation
   const chartLabels = history.map(item => dayjs(item.timestamp).format(timeRange <= 24 ? 'HH:mm' : 'MMM DD HH:mm'));
   const chartData = {
@@ -116,8 +119,8 @@ export default function DeviceDetailPage() {
       {
         label: 'Latency (ms)',
         data: history.map(item => item.latency !== null ? item.latency : null),
-        borderColor: '#0d6efd',
-        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+        borderColor: token('primary'),
+        backgroundColor: token('primary-soft'),
         fill: true,
         tension: 0.3,
         pointRadius: history.length > 50 ? 0 : 3,
@@ -127,11 +130,16 @@ export default function DeviceDetailPage() {
   };
 
   const chartOptions = {
+    color: token('text-secondary'),
+    font: { family: token('font-family'), size: parseFloat(token('font-size-xs')) },
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: {
+        backgroundColor: token('bg-sidebar'),
+        titleColor: token('text-inverse'),
+        bodyColor: token('text-inverse'),
         callbacks: {
           label: (context) => `Latency: ${context.parsed.y !== null ? context.parsed.y + ' ms' : 'Offline / Timeout'}`
         }
@@ -140,12 +148,13 @@ export default function DeviceDetailPage() {
     scales: {
       y: {
         beginAtZero: true,
-        title: { display: true, text: 'Latency (ms)' },
-        grid: { color: 'rgba(0,0,0,0.05)' }
+        ticks: { color: token('text-secondary') },
+        title: { display: true, text: 'Latency (ms)', color: token('text-secondary') },
+        grid: { color: token('border') }
       },
       x: {
         grid: { display: false },
-        ticks: { maxTicksLimit: 12 }
+        ticks: { maxTicksLimit: 12, color: token('text-secondary') }
       }
     }
   };
@@ -153,85 +162,59 @@ export default function DeviceDetailPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div className="d-flex align-items-center gap-3">
-          <Link to="/devices" className="btn btn-outline-secondary btn-sm">
+      <div className="bic-page-header">
+        <div className="bic-flex bic-items-center bic-gap-3">
+          <Link to="/devices" className="bic-btn bic-btn-secondary bic-btn-sm">
             <MdArrowBack /> Back
           </Link>
           <div>
-            <h2 className="mb-0 d-flex align-items-center gap-2">
+            <h1 className="bic-page-title bic-flex bic-items-center bic-gap-2">
               {device.device_name}
               <StatusBadge status={device.current_status} criticality={device.criticality} />
-            </h2>
-            <div className="text-muted small">
+            </h1>
+            <div className="bic-text-secondary bic-text-sm">
               <code>{device.ip_address}</code> {device.hostname && `(${device.hostname})`}
             </div>
           </div>
         </div>
         <div>
-          <Link to={`/devices/${id}/edit`} className="btn btn-primary">
+          <Link to={`/devices/${id}/edit`} className="bic-btn bic-btn-primary">
             <MdEdit /> Edit Device
           </Link>
         </div>
       </div>
 
-      {/* Metrics Cards */}
-      <Row className="g-3 mb-4">
-        <Col md={3} sm={6}>
-          <Card className="border-0 shadow-sm text-center py-3">
-            <div className="text-muted small text-uppercase">24h Availability</div>
-            <h3 className={`mt-1 mb-0 ${metrics?.availability_24h < 99 ? 'text-warning' : 'text-success'}`}>
-              {metrics?.availability_24h !== undefined ? `${metrics.availability_24h}%` : 'N/A'}
-            </h3>
-          </Card>
-        </Col>
-        <Col md={3} sm={6}>
-          <Card className="border-0 shadow-sm text-center py-3">
-            <div className="text-muted small text-uppercase">Current Latency</div>
-            <h3 className="mt-1 mb-0 text-primary">
-              {device.current_latency !== null ? `${device.current_latency} ms` : '—'}
-            </h3>
-          </Card>
-        </Col>
-        <Col md={3} sm={6}>
-          <Card className="border-0 shadow-sm text-center py-3">
-            <div className="text-muted small text-uppercase">Average Latency (24h)</div>
-            <h3 className="mt-1 mb-0 text-dark">
-              {metrics?.avg_latency_24h !== null ? `${metrics?.avg_latency_24h} ms` : '—'}
-            </h3>
-          </Card>
-        </Col>
-        <Col md={3} sm={6}>
-          <Card className="border-0 shadow-sm text-center py-3">
-            <div className="text-muted small text-uppercase">Last Seen</div>
-            <h5 className="mt-1 mb-0 text-dark" style={{ fontSize: '1rem' }}>
-              {device.last_seen ? dayjs(device.last_seen).format('YYYY-MM-DD HH:mm:ss') : 'Never'}
-            </h5>
-          </Card>
-        </Col>
-      </Row>
+      <div className="bic-grid bic-grid-4 bic-mb-6">
+        <Stat label="24h Availability" value={metrics?.availability_24h != null ? metrics.availability_24h + '%' : 'N/A'} tone={metrics?.availability_24h < 99 ? 'warning' : 'success'} />
+        <Stat label="Current Latency" value={device.current_latency != null ? device.current_latency + ' ms' : '—'} />
+        <Stat label="Average Latency (24h)" value={metrics?.avg_latency_24h != null ? metrics.avg_latency_24h + ' ms' : '—'} />
+        <Stat label="Last Seen" value={device.last_seen ? dayjs(device.last_seen).format('HH:mm:ss') : 'Never'} meta={device.last_seen ? dayjs(device.last_seen).format('YYYY-MM-DD') : undefined} />
+      </div>
 
       {/* Latency History Chart */}
-      <Card className="border-0 shadow-sm mb-4">
-        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <h5 className="mb-0 d-flex align-items-center gap-2">
+      <Card className="bic-mb-6">
+        <Card.Header>
+          <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
             <MdSpeed /> Latency History
-          </h5>
+          </h2>
           <ButtonGroup size="sm">
             <Button
-              variant={timeRange === 1 ? 'primary' : 'outline-primary'}
+              variant={timeRange === 1 ? 'primary' : 'secondary'}
+              aria-pressed={timeRange === 1}
               onClick={() => setTimeRange(1)}
             >
               1 Hour
             </Button>
             <Button
-              variant={timeRange === 24 ? 'primary' : 'outline-primary'}
+              variant={timeRange === 24 ? 'primary' : 'secondary'}
+              aria-pressed={timeRange === 24}
               onClick={() => setTimeRange(24)}
             >
               24 Hours
             </Button>
             <Button
-              variant={timeRange === 168 ? 'primary' : 'outline-primary'}
+              variant={timeRange === 168 ? 'primary' : 'secondary'}
+              aria-pressed={timeRange === 168}
               onClick={() => setTimeRange(168)}
             >
               7 Days
@@ -239,11 +222,11 @@ export default function DeviceDetailPage() {
           </ButtonGroup>
         </Card.Header>
         <Card.Body>
-          <div style={{ height: '280px' }}>
+          <div className="bic-chart">
             {history.length > 0 ? (
-              <Line data={chartData} options={chartOptions} />
+              <Line data={chartData} options={chartOptions} role="img" aria-label="Device latency over the selected time range, in milliseconds" />
             ) : (
-              <div className="d-flex justify-content-center align-items-center h-100 text-muted">
+              <div className="bic-flex bic-justify-center bic-items-center bic-h-full bic-text-secondary">
                 No latency history recorded yet for this time window.
               </div>
             )}
@@ -251,60 +234,60 @@ export default function DeviceDetailPage() {
         </Card.Body>
       </Card>
 
-      <Row className="g-4">
+      <Row className="bic-gap-6">
         {/* Device Information */}
         <Col lg={6}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Header className="bg-white py-3">
-              <h5 className="mb-0 d-flex align-items-center gap-2">
+          <Card className="bic-h-full">
+            <Card.Header>
+              <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
                 <MdInfo /> Device Details
-              </h5>
+              </h2>
             </Card.Header>
-            <Card.Body className="p-0">
-              <Table responsive hover className="mb-0">
+            <Card.Body className="bic-p-0">
+              <Table responsive hover className="bic-mb-0">
                 <tbody>
                   <tr>
-                    <td className="text-muted fw-semibold" style={{ width: '35%' }}>IP Address</td>
+                    <td className="bic-text-secondary bic-font-semibold bic-detail-label">IP Address</td>
                     <td><code>{device.ip_address}</code></td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Criticality</td>
+                    <td className="bic-text-secondary bic-font-semibold">Criticality</td>
                     <td>
-                      <span className={`badge ${device.criticality === 'NON_CRITICAL' ? 'bg-secondary' : 'bg-danger'}`}>
+                      <span className="bic-badge bic-badge-info">
                         {device.criticality || 'CRITICAL'}
                       </span>
                     </td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Hostname</td>
+                    <td className="bic-text-secondary bic-font-semibold">Hostname</td>
                     <td>{device.hostname || '—'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Category</td>
+                    <td className="bic-text-secondary bic-font-semibold">Category</td>
                     <td>{device.category_name || 'Unassigned'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Group</td>
+                    <td className="bic-text-secondary bic-font-semibold">Group</td>
                     <td>{device.group_name || 'Unassigned'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Location</td>
+                    <td className="bic-text-secondary bic-font-semibold">Location</td>
                     <td>{device.location_name || 'Unassigned'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">VLAN</td>
+                    <td className="bic-text-secondary bic-font-semibold">VLAN</td>
                     <td>{device.vlan_id ? `VLAN ${device.vlan_id} (${device.vlan_name || ''})` : '—'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Subnet</td>
+                    <td className="bic-text-secondary bic-font-semibold">Subnet</td>
                     <td>{device.subnet || '—'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Monitoring Interval</td>
+                    <td className="bic-text-secondary bic-font-semibold">Monitoring Interval</td>
                     <td>{device.monitoring_interval ? `${device.monitoring_interval}s` : 'Global Default (15s)'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted fw-semibold">Thresholds</td>
+                    <td className="bic-text-secondary bic-font-semibold">Thresholds</td>
                     <td>
                       Fail: {device.failure_threshold || 'Default (3)'} | Recovery: {device.recovery_threshold || 'Default (2)'}
                     </td>
@@ -317,18 +300,18 @@ export default function DeviceDetailPage() {
 
         {/* Device Incident History */}
         <Col lg={6}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-              <h5 className="mb-0 d-flex align-items-center gap-2">
+          <Card className="bic-h-full">
+            <Card.Header>
+              <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
                 <MdWarning /> Recent Incidents
-              </h5>
-              <Link to="/incidents" className="btn btn-outline-secondary btn-sm">
+              </h2>
+              <Link to="/incidents" className="bic-btn bic-btn-secondary bic-btn-sm">
                 View All
               </Link>
             </Card.Header>
-            <Card.Body className="p-0">
-              <Table responsive hover className="mb-0">
-                <thead className="table-light">
+            <Card.Body className="bic-p-0">
+              <Table responsive hover className="bic-mb-0">
+                <thead>
                   <tr>
                     <th>Status</th>
                     <th>Detected</th>
@@ -345,17 +328,17 @@ export default function DeviceDetailPage() {
                             {inc.status}
                           </Badge>
                         </td>
-                        <td className="small">{dayjs(inc.detected_at).format('YYYY-MM-DD HH:mm')}</td>
-                        <td className="small fw-semibold">{inc.duration_formatted || (inc.status === 'RESOLVED' ? '0s' : 'Ongoing')}</td>
-                        <td className="small text-truncate" style={{ maxWidth: '140px' }}>
+                        <td className="bic-text-sm">{dayjs(inc.detected_at).format('YYYY-MM-DD HH:mm')}</td>
+                        <td className="bic-text-sm bic-font-semibold">{inc.duration_formatted || (inc.status === 'RESOLVED' ? '0s' : 'Ongoing')}</td>
+                        <td className="bic-text-sm bic-table-note">
                           {inc.failure_reason || '—'}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="text-center text-muted py-4">
-                        <MdCheckCircle className="text-success me-1" size={18} /> No outages recorded for this device.
+                      <td colSpan="4" className="bic-empty">
+                        <MdCheckCircle className="bic-text-success bic-mr-1" /> No outages recorded for this device.
                       </td>
                     </tr>
                   )}

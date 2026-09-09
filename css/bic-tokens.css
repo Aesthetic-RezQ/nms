@@ -1,0 +1,108 @@
+:root {
+  /* Brand */
+  --bic-primary: #0f4c81;
+  --bic-primary-hover: #0b3b65;
+  --bic-primary-soft: #eaf3fb;
+  --bic-secondary: #475569;
+  --bic-accent: #0ea5e9;
+
+  /* Status */
+  --bic-success: #15803d;
+  --bic-success-soft: #ecfdf3;
+  --bic-warning: #b45309;
+  --bic-warning-soft: #fff7ed;
+  --bic-danger: #b91c1c;
+  --bic-danger-soft: #fef2f2;
+  --bic-info: #0369a1;
+  --bic-info-soft: #f0f9ff;
+
+  /* Neutral surfaces */
+  --bic-bg-body: #f5f7fa;
+  --bic-bg-surface: #ffffff;
+  --bic-bg-sidebar: #172033;
+  --bic-bg-sidebar-hover: #22304a;
+  --bic-bg-muted: #f8fafc;
+
+  /* Text */
+  --bic-text-primary: #1e293b;
+  --bic-text-secondary: #64748b;
+  --bic-text-muted: #94a3b8;
+  --bic-text-inverse: #ffffff;
+
+  /* Borders */
+  --bic-border: #e2e8f0;
+  --bic-border-strong: #cbd5e1;
+
+  /* Typography */
+  --bic-font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  --bic-font-size-xs: 12px;
+  --bic-font-size-sm: 13px;
+  --bic-font-size-md: 14px;
+  --bic-font-size-lg: 18px;
+  --bic-font-size-xl: 24px;
+  --bic-font-size-2xl: 30px;
+  --bic-line-height: 1.5;
+
+  /* Spacing: 4px scale */
+  --bic-space-1: 4px;
+  --bic-space-2: 8px;
+  --bic-space-3: 12px;
+  --bic-space-4: 16px;
+  --bic-space-5: 20px;
+  --bic-space-6: 24px;
+  --bic-space-8: 32px;
+  --bic-space-10: 40px;
+
+  /* Shape */
+  --bic-radius-sm: 4px;
+  --bic-radius-md: 8px;
+  --bic-radius-lg: 12px;
+  --bic-radius-pill: 999px;
+
+  /* Shadows */
+  --bic-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --bic-shadow-md: 0 6px 20px rgba(15, 23, 42, 0.08);
+
+  /* Layout */
+  --bic-sidebar-width: 250px;
+  --bic-topbar-height: 64px;
+  --bic-content-max: 1600px;
+
+  /* Motion */
+  --bic-transition: 160ms ease;
+
+  /* Shared component dimensions and states */
+  --bic-control-height: 40px;
+  --bic-control-height-sm: 32px;
+  --bic-textarea-height: 110px;
+  --bic-icon-size: 18px;
+  --bic-icon-size-lg: 24px;
+  --bic-logo-height: 36px;
+  --bic-login-logo-height: 64px;
+  --bic-login-width: 400px;
+  --bic-modal-width: 620px;
+  --bic-modal-width-lg: 800px;
+  --bic-chart-height: 280px;
+  --bic-scroll-height: 200px;
+  --bic-scroll-height-sm: 120px;
+  --bic-code-height: 250px;
+  --bic-notification-width: 400px;
+  --bic-detail-column-width: 35%;
+  --bic-table-note-width: 250px;
+  --bic-focus-width: 2px;
+  --bic-focus-offset: 3px;
+  --bic-focus-ring: 0 0 0 3px rgba(15, 76, 129, .12);
+  --bic-backdrop: rgba(15, 23, 42, .55);
+  --bic-sidebar-border: rgba(255, 255, 255, .08);
+  --bic-sidebar-mark: rgba(255, 255, 255, .12);
+  --bic-sidebar-label: rgba(255, 255, 255, .65);
+  --bic-sidebar-link: rgba(255, 255, 255, .82);
+  --bic-topbar-surface: rgba(255, 255, 255, .96);
+  --bic-disabled-opacity: .55;
+  --bic-spinner-duration: 800ms;
+  --bic-z-topbar: 900;
+  --bic-z-overlay: 950;
+  --bic-z-sidebar: 1000;
+  --bic-z-modal: 2000;
+  --bic-z-notifications: 2100;
+}

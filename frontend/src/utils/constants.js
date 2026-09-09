@@ -4,7 +4,7 @@ export const STATUS_COLORS = {
   UP: 'success',
   DOWN: 'danger',
   WARNING: 'warning',
-  UNKNOWN: 'secondary',
+  UNKNOWN: 'info',
   MAINTENANCE: 'info'
 };
 

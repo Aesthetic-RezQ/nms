@@ -57,7 +57,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: nms_frontend
     ports:
       - "3000:80"

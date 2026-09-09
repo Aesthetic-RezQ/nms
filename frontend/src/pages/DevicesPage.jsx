@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Button, Table, Form, Row, Col, Card, Badge, Modal, Alert, Spinner } from 'react-bootstrap';
+import { Button, Table, Form, Row, Col, Card, Badge, Modal, Alert, Spinner } from '../components/bic';
 import { MdAdd, MdDelete, MdEdit, MdFileDownload, MdFileUpload, MdVisibility, MdCheckCircle, MdError } from 'react-icons/md';
-import { toast } from 'react-toastify';
+import { toast } from '../components/bic/Notifications';
 import { get, del, post } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { DEVICE_STATUSES } from '../utils/constants';
@@ -134,22 +134,22 @@ export default function DevicesPage() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div className="bic-page-header">
         <div>
-          <h2 className="mb-0">Device Management</h2>
-          <p className="text-muted small mb-0">Register, configure, and inspect LAN network assets.</p>
+          <h1 className="bic-page-title">Device Management</h1>
+          <p className="bic-page-subtitle">Register, configure, and inspect LAN network assets.</p>
         </div>
-        <div className="d-flex gap-2">
-          <Button variant="outline-secondary" onClick={handleExportCSV}>
-            <MdFileDownload className="me-1" /> Export CSV
+        <div className="bic-toolbar">
+          <Button variant="secondary" onClick={handleExportCSV}>
+            <MdFileDownload className="bic-mr-1" /> Export CSV
           </Button>
           {isAdmin && (
             <>
-              <Button variant="outline-primary" onClick={() => { setShowImportModal(true); setImportResult(null); setImportFile(null); }}>
-                <MdFileUpload className="me-1" /> Import CSV
+              <Button variant="secondary" onClick={() => { setShowImportModal(true); setImportResult(null); setImportFile(null); }}>
+                <MdFileUpload className="bic-mr-1" /> Import CSV
               </Button>
               <Button variant="primary" onClick={() => navigate('/devices/new')}>
-                <MdAdd className="me-1" /> Add Device
+                <MdAdd className="bic-mr-1" /> Add Device
               </Button>
             </>
           )}
@@ -157,30 +157,30 @@ export default function DevicesPage() {
       </div>
 
       {/* Filters Card */}
-      <Card className="mb-4 border-0 shadow-sm">
+      <Card className="bic-mb-6">
         <Card.Body>
           <Form onSubmit={handleApplyFilters}>
-            <Row className="g-2">
+            <Row className="bic-gap-2">
               <Col lg={2} md={4} sm={6}>
-                <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
+                <Form.Select aria-label="Filter by status" name="status" value={filters.status} onChange={handleFilterChange}>
                   <option value="">All Statuses</option>
                   {DEVICE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </Form.Select>
               </Col>
               <Col lg={2} md={4} sm={6}>
-                <Form.Select name="category_id" value={filters.category_id} onChange={handleFilterChange}>
+                <Form.Select aria-label="Filter by category" name="category_id" value={filters.category_id} onChange={handleFilterChange}>
                   <option value="">All Categories</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </Form.Select>
               </Col>
               <Col lg={2} md={4} sm={6}>
-                <Form.Select name="group_id" value={filters.group_id} onChange={handleFilterChange}>
+                <Form.Select aria-label="Filter by group" name="group_id" value={filters.group_id} onChange={handleFilterChange}>
                   <option value="">All Groups</option>
                   {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </Form.Select>
               </Col>
               <Col lg={2} md={4} sm={6}>
-                <Form.Select name="location_id" value={filters.location_id} onChange={handleFilterChange}>
+                <Form.Select aria-label="Filter by location" name="location_id" value={filters.location_id} onChange={handleFilterChange}>
                   <option value="">All Locations</option>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </Form.Select>
@@ -188,13 +188,14 @@ export default function DevicesPage() {
               <Col lg={3} md={6}>
                 <Form.Control 
                   name="search" 
+                  aria-label="Search devices"
                   placeholder="Search name, IP, hostname..." 
                   value={filters.search} 
                   onChange={handleFilterChange} 
                 />
               </Col>
               <Col lg={1} md={2}>
-                <Button type="submit" variant="secondary" className="w-100">Filter</Button>
+                <Button type="submit" variant="secondary" className="bic-w-full">Filter</Button>
               </Col>
             </Row>
           </Form>
@@ -202,11 +203,11 @@ export default function DevicesPage() {
       </Card>
 
       {/* Devices Table */}
-      <Card className="border-0 shadow-sm">
-        <Table responsive hover className="mb-0 align-middle">
-          <thead className="table-light">
+      <Card>
+        <Table responsive hover className="bic-mb-0">
+          <thead>
             <tr>
-              <th className="ps-3">Status</th>
+              <th className="bic-pl-4">Status</th>
               <th>Device Name</th>
               <th>IP Address</th>
               <th>Category</th>
@@ -214,25 +215,25 @@ export default function DevicesPage() {
               <th>Location</th>
               <th>Latency</th>
               <th>Last Check</th>
-              <th className="text-end pe-3">Actions</th>
+              <th className="bic-text-right bic-pr-4">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="9" className="text-center py-5 text-muted">Loading devices...</td></tr>
+              <tr><td colSpan="9" className="bic-empty">Loading devices...</td></tr>
             ) : devices.length === 0 ? (
-              <tr><td colSpan="9" className="text-center py-5 text-muted">No devices found matching filter.</td></tr>
+              <tr><td colSpan="9" className="bic-empty">No devices found matching filter.</td></tr>
             ) : (
               devices.map(dev => (
                 <tr key={dev.id}>
-                  <td className="ps-3">
+                  <td className="bic-pl-4">
                     <StatusBadge status={dev.current_status || dev.status} />
                   </td>
                   <td>
-                    <Link to={`/devices/${dev.id}`} className="fw-semibold text-decoration-none text-dark">
+                    <Link to={`/devices/${dev.id}`} className="bic-font-semibold bic-text-primary">
                       {dev.device_name || dev.name}
                     </Link>
-                    {dev.hostname && <div className="text-muted small">{dev.hostname}</div>}
+                    {dev.hostname && <div className="bic-text-secondary bic-text-sm">{dev.hostname}</div>}
                   </td>
                   <td><code>{dev.ip_address}</code></td>
                   <td>{dev.category_name || dev.category?.name || '—'}</td>
@@ -240,27 +241,27 @@ export default function DevicesPage() {
                   <td>{dev.location_name || dev.location?.name || '—'}</td>
                   <td>
                     {dev.current_latency !== null && dev.current_latency !== undefined ? (
-                      <span className={`fw-semibold ${dev.current_latency > 100 ? 'text-warning' : 'text-success'}`}>
+                      <span className={`bic-font-semibold ${dev.current_latency > 100 ? 'bic-text-warning' : 'bic-text-success'}`}>
                         {dev.current_latency} ms
                       </span>
                     ) : (
-                      <span className="text-muted">—</span>
+                      <span className="bic-text-secondary">—</span>
                     )}
                   </td>
-                  <td className="small text-muted">
+                  <td className="bic-text-sm bic-text-secondary">
                     {dev.last_check ? dayjs(dev.last_check).format('YYYY-MM-DD HH:mm') : 'Never'}
                   </td>
-                  <td className="text-end pe-3">
-                    <div className="btn-group btn-group-sm">
-                      <Link to={`/devices/${dev.id}`} className="btn btn-outline-secondary" title="View Analytics">
+                  <td className="bic-text-right bic-pr-4">
+                    <div className="bic-button-group bic-button-group-sm">
+                      <Link to={`/devices/${dev.id}`} className="bic-btn bic-btn-secondary" title="View Analytics">
                         <MdVisibility />
                       </Link>
                       {isAdmin && (
                         <>
-                          <Link to={`/devices/${dev.id}/edit`} className="btn btn-outline-primary" title="Edit Configuration">
+                          <Link to={`/devices/${dev.id}/edit`} className="bic-btn bic-btn-secondary" title="Edit Configuration">
                             <MdEdit />
                           </Link>
-                          <Button variant="outline-danger" onClick={() => setDeleteId(dev.id)} title="Delete Device">
+                          <Button variant="danger" onClick={() => setDeleteId(dev.id)} title="Delete Device">
                             <MdDelete />
                           </Button>
                         </>
@@ -277,27 +278,27 @@ export default function DevicesPage() {
       {/* CSV Bulk Import Modal (PRD §47) */}
       <Modal show={showImportModal} onHide={() => setShowImportModal(false)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title className="h5">Bulk Import Devices from CSV</Modal.Title>
+          <Modal.Title>Bulk Import Devices from CSV</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p className="text-muted small">
+          <p className="bic-text-secondary bic-text-sm">
             Upload a CSV file containing columns: <code>device_name, ip_address, hostname, category, group, location, vlan_id, subnet</code>.
           </p>
 
-          <Form.Group className="mb-3">
+          <Form.Group className="bic-mb-4">
             <Form.Label>Select CSV File</Form.Label>
             <Form.Control type="file" accept=".csv" onChange={handleFileSelect} />
           </Form.Group>
 
           {importResult && (
-            <Alert variant={importResult.created > 0 ? "success" : "warning"} className="mt-3">
-              <div className="fw-semibold mb-1">
+            <Alert variant={importResult.created > 0 ? "success" : "warning"} className="bic-mt-4">
+              <div className="bic-font-semibold bic-mb-1">
                 Import Summary: {importResult.created} Imported | {importResult.total - importResult.created} Skipped / Errors
               </div>
               {importResult.errors && importResult.errors.length > 0 && (
-                <div className="small mt-2" style={{ maxHeight: '120px', overflowY: 'auto' }}>
-                  <div className="text-danger fw-semibold">Issues Encountered:</div>
-                  <ul className="mb-0 ps-3">
+                <div className="bic-text-sm bic-mt-2 bic-scroll-area-sm">
+                  <div className="bic-text-danger bic-font-semibold">Issues Encountered:</div>
+                  <ul className="bic-mb-0 bic-pl-4">
                     {importResult.errors.map((err, idx) => (
                       <li key={idx}>{err}</li>
                     ))}
@@ -310,7 +311,7 @@ export default function DevicesPage() {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowImportModal(false)}>Close</Button>
           <Button variant="primary" onClick={handleExecuteImport} disabled={!importFile || importing}>
-            {importing ? <><Spinner size="sm" animation="border" className="me-1" /> Importing...</> : 'Start Import'}
+            {importing ? <><Spinner size="sm" className="bic-mr-1" /> Importing...</> : 'Start Import'}
           </Button>
         </Modal.Footer>
       </Modal>

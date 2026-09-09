@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, Card, Modal, Form } from 'react-bootstrap';
+import { Button, Table, Card, Modal, Form } from '../components/bic';
 import { MdAdd, MdEdit, MdDelete } from 'react-icons/md';
-import { toast } from 'react-toastify';
+import { toast } from '../components/bic/Notifications';
 import { get, post, put, del } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -72,31 +72,31 @@ export default function CategoriesPage() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Categories</h2>
+      <div className="bic-page-header">
+        <h1 className="bic-page-title">Categories</h1>
         {isAdmin && (
           <Button variant="primary" onClick={() => handleOpenModal()}>
-            <MdAdd className="me-1" /> Add Category
+            <MdAdd className="bic-mr-1" /> Add Category
           </Button>
         )}
       </div>
 
-      <Card className="shadow-sm">
-        <Table responsive hover className="mb-0">
-          <thead className="table-light">
+      <Card>
+        <Table responsive hover className="bic-mb-0">
+          <thead>
             <tr>
               <th>Icon</th>
               <th>Name</th>
               <th>Description</th>
               <th>Order</th>
-              <th>Actions</th>
+              <th className="bic-text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="5" className="text-center py-4">Loading...</td></tr>
+              <tr><td colSpan="5" className="bic-empty">Loading...</td></tr>
             ) : categories.length === 0 ? (
-              <tr><td colSpan="5" className="text-center py-4">No categories found</td></tr>
+              <tr><td colSpan="5" className="bic-empty">No categories found</td></tr>
             ) : (
               categories.map(c => (
                 <tr key={c.id}>
@@ -104,14 +104,14 @@ export default function CategoriesPage() {
                   <td>{c.name}</td>
                   <td>{c.description}</td>
                   <td>{c.display_order}</td>
-                  <td>
+                  <td className="bic-text-right">
                     {isAdmin && (
                       <>
-                        <Button variant="link" className="p-0 text-primary me-2" onClick={() => handleOpenModal(c)}>
-                          <MdEdit size={18} />
+                        <Button variant="secondary" size="sm" className="bic-mr-2" title="Edit category" onClick={() => handleOpenModal(c)}>
+                          <MdEdit />
                         </Button>
-                        <Button variant="link" className="p-0 text-danger" onClick={() => setDeleteId(c.id)}>
-                          <MdDelete size={18} />
+                        <Button variant="danger" size="sm" title="Delete category" onClick={() => setDeleteId(c.id)}>
+                          <MdDelete />
                         </Button>
                       </>
                     )}
@@ -129,19 +129,19 @@ export default function CategoriesPage() {
             <Modal.Title>{formData.id ? 'Edit Category' : 'Add Category'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Name *</Form.Label>
               <Form.Control required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Description</Form.Label>
               <Form.Control as="textarea" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Icon (Text/Emoji)</Form.Label>
               <Form.Control value={formData.icon} onChange={e => setFormData({...formData, icon: e.target.value})} />
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Display Order</Form.Label>
               <Form.Control type="number" value={formData.display_order} onChange={e => setFormData({...formData, display_order: parseInt(e.target.value) || 0})} />
             </Form.Group>

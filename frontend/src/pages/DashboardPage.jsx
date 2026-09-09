@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Row, Col, Table, Alert, Badge, Button, Spinner } from 'react-bootstrap';
+import { Card, Row, Col, Table, Alert, Badge, Button, Spinner, Stat } from '../components/bic';
 import { MdSpeed, MdWarning, MdCheckCircle, MdError, MdRefresh, MdArrowForward, MdWifiTethering } from 'react-icons/md';
 import { get } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
@@ -9,15 +9,19 @@ import dayjs from 'dayjs';
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef(null);
 
   const fetchSummary = async () => {
+    setLoading(true);
     try {
       const res = await get('/dashboard/summary');
       setSummary(res.data);
+      setError('');
     } catch (error) {
       console.error('Error fetching dashboard summary:', error);
+      setError('Unable to refresh network health. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -25,12 +29,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchSummary();
+    let stopped = false;
+    let reconnectTimeout;
 
     // Setup WebSocket connection for live status streaming
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/api/dashboard/ws`;
 
     const connectWebSocket = () => {
+      if (stopped) return;
       try {
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
@@ -43,6 +50,7 @@ export default function DashboardPage() {
           try {
             const data = JSON.parse(event.data);
             setSummary(data);
+            setError('');
           } catch (e) {
             console.error("WS Parse error", e);
           }
@@ -51,7 +59,7 @@ export default function DashboardPage() {
         ws.onclose = () => {
           setWsConnected(false);
           // Try reconnect after 5s
-          setTimeout(connectWebSocket, 5000);
+          if (!stopped) reconnectTimeout = setTimeout(connectWebSocket, 5000);
         };
 
         ws.onerror = () => {
@@ -68,6 +76,8 @@ export default function DashboardPage() {
     const interval = setInterval(fetchSummary, 15000);
 
     return () => {
+      stopped = true;
+      clearTimeout(reconnectTimeout);
       clearInterval(interval);
       if (wsRef.current) {
         wsRef.current.close();
@@ -83,108 +93,61 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Top Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div className="bic-page-header">
         <div>
-          <h2 className="mb-0 d-flex align-items-center gap-2">
+          <h1 className="bic-page-title bic-flex bic-items-center bic-gap-2">
             Network Dashboard
             {wsConnected && (
-              <Badge bg="success" pill style={{ fontSize: '0.65rem' }}>
+              <Badge bg="success">
                 <MdWifiTethering /> Live
               </Badge>
             )}
-          </h2>
-          <p className="text-muted small mb-0">Real-time availability and infrastructure health overview.</p>
+          </h1>
+          <p className="bic-page-subtitle">Real-time availability and infrastructure health overview.</p>
         </div>
-        <Button variant="outline-secondary" size="sm" onClick={fetchSummary} disabled={loading}>
+        <Button variant="secondary" size="sm" onClick={fetchSummary} disabled={loading}>
           <MdRefresh /> Refresh
         </Button>
       </div>
 
+      {error && <Alert variant="danger">{error}</Alert>}
+
       {/* Stale Worker Banner (PRD §46) */}
       {workerStatus?.is_stale && (
-        <Alert variant="warning" className="d-flex align-items-center gap-2 mb-4">
-          <MdWarning size={22} className="text-warning" />
+        <Alert variant="warning" className="bic-flex bic-items-center bic-gap-2 bic-mb-6">
+          <MdWarning className="bic-text-warning" />
           <div>
             <strong>Warning:</strong> {workerStatus.status_message}. Device availability status may not reflect the latest live network state.
           </div>
         </Alert>
       )}
 
-      {/* Status Summary Cards */}
-      <Row className="mb-4 g-3">
-        <Col lg={2} md={4} sm={6}>
-          <Card className="text-center border-0 shadow-sm py-2">
-            <Card.Body>
-              <div className="text-muted small text-uppercase">Total Devices</div>
-              <h2 className="mb-0 fw-bold">{counts.total}</h2>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={2} md={4} sm={6}>
-          <Card className="text-center border-0 shadow-sm py-2 border-start border-success border-4">
-            <Card.Body>
-              <div className="text-success small text-uppercase fw-semibold">UP</div>
-              <h2 className="mb-0 text-success fw-bold">{counts.up}</h2>
-            </Card.Body>
-          </Card>
-        </Col>                <Col lg={2} md={4} sm={6}>
-          <Card className="text-center border-0 shadow-sm py-2 border-start border-danger border-4">
-            <Card.Body>
-              <div className="text-danger small text-uppercase fw-semibold">DOWN (Critical)</div>
-              <h2 className="mb-0 text-danger fw-bold">{infraCounts.down}</h2>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={2} md={4} sm={6}>
-          <Card className="text-center border-0 shadow-sm py-2 border-start border-warning border-4">
-            <Card.Body>
-              <div className="text-warning small text-uppercase fw-semibold">WARNING</div>
-              <h2 className="mb-0 text-warning fw-bold">{counts.warning}</h2>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={2} md={4} sm={6}>
-          <Card className="text-center border-0 shadow-sm py-2 border-start border-secondary border-4">
-            <Card.Body>
-              <div className="text-secondary small text-uppercase fw-semibold">UNKNOWN</div>
-              <h2 className="mb-0 text-secondary fw-bold">{counts.unknown}</h2>
-            </Card.Body>
-          </Card>
-        </Col>                <Col lg={2} md={4} sm={6}>
-          <Card className="text-center border-0 shadow-sm py-2 border-start border-info border-4">
-            <Card.Body>
-              <div className="text-info small text-uppercase fw-semibold">MAINTENANCE</div>
-              <h2 className="mb-0 text-info fw-bold">{counts.maintenance}</h2>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={2} md={4} sm={6}>
-          <Card className="text-center border-0 shadow-sm py-2 border-start border-secondary border-4">
-            <Card.Body>
-              <div className="text-secondary small text-uppercase fw-semibold">WORKSTATIONS</div>
-              <h2 className="mb-0 fw-bold"><span className="text-success">{wsCounts.up}</span> / <span className="text-secondary">{wsCounts.total}</span></h2>
-              <div className="text-muted small">Offline: {wsCounts.down}</div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="bic-grid bic-grid-4 bic-mb-6">
+        <Stat label="Total Devices" value={summary ? counts.total : '—'} />
+        <Stat label="UP" value={summary ? counts.up : '—'} tone="success" />
+        <Stat label="DOWN (Critical)" value={summary ? infraCounts.down : '—'} tone="danger" />
+        <Stat label="Warning" value={summary ? counts.warning : '—'} tone="warning" />
+        <Stat label="Unknown" value={summary ? counts.unknown : '—'} tone="info" />
+        <Stat label="Maintenance" value={summary ? counts.maintenance : '—'} tone="info" />
+        <Stat label="Workstations" value={summary ? wsCounts.up + ' / ' + wsCounts.total : '—'} meta={summary ? 'Offline: ' + wsCounts.down : undefined} />
+      </div>
 
       {/* Main Content Grid */}
-      <Row className="g-4 mb-4">
+      <Row className="bic-gap-6 bic-mb-6">
         {/* Recent Incidents Card */}
         <Col lg={5}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-              <h5 className="mb-0 d-flex align-items-center gap-2">
-                <MdWarning className="text-danger" /> Active & Recent Incidents
-              </h5>
-              <Link to="/incidents" className="btn btn-outline-secondary btn-sm">
+          <Card className="bic-h-full">
+            <Card.Header>
+              <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
+                <MdWarning /> Active & Recent Incidents
+              </h2>
+              <Link to="/incidents" className="bic-btn bic-btn-secondary bic-btn-sm">
                 View All <MdArrowForward />
               </Link>
             </Card.Header>
-            <Card.Body className="p-0">
-              <Table responsive hover className="mb-0 align-middle">
-                <thead className="table-light">
+            <Card.Body className="bic-p-0">
+              <Table responsive hover className="bic-mb-0">
+                <thead>
                   <tr>
                     <th>Status</th>
                     <th>Device</th>
@@ -202,19 +165,19 @@ export default function DashboardPage() {
                           </Badge>
                         </td>
                         <td>
-                          <Link to={`/devices/${inc.device_id}`} className="text-decoration-none fw-semibold text-dark">
+                          <Link to={`/devices/${inc.device_id}`} className="bic-font-semibold bic-text-primary">
                             {inc.device_name}
                           </Link>
-                          <div className="text-muted small"><code>{inc.ip_address}</code></div>
+                          <div className="bic-text-secondary bic-text-sm"><code>{inc.ip_address}</code></div>
                         </td>
-                        <td className="small">{dayjs(inc.down_since).format('HH:mm:ss')}</td>
-                        <td className="small fw-semibold">{inc.duration_formatted || 'Ongoing'}</td>
+                        <td className="bic-text-sm">{dayjs(inc.down_since).format('HH:mm:ss')}</td>
+                        <td className="bic-text-sm bic-font-semibold">{inc.duration_formatted || 'Ongoing'}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="text-center py-4 text-muted">
-                        <MdCheckCircle className="text-success me-1" size={18} /> No active outages. All network systems operating normally.
+                      <td colSpan="4" className="bic-empty">
+                        {summary && <MdCheckCircle className="bic-text-success bic-mr-1" />} {summary ? 'No recent incidents recorded.' : loading ? 'Loading incidents...' : 'Incident data is unavailable.'}
                       </td>
                     </tr>
                   )}
@@ -226,32 +189,32 @@ export default function DashboardPage() {
 
         {/* 24h Network Availability & Quick Stats */}
         <Col lg={7}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-              <h5 className="mb-0 d-flex align-items-center gap-2">
-                <MdSpeed className="text-primary" /> Network Health Overview
-              </h5>
-              <span className="badge bg-light text-dark border">24-Hour Metrics</span>
+          <Card className="bic-h-full">
+            <Card.Header>
+              <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
+                <MdSpeed className="bic-text-brand" /> Network Health Overview
+              </h2>
+              <span className="bic-badge bic-badge-info">24-Hour Metrics</span>
             </Card.Header>
-            <Card.Body className="d-flex flex-column justify-content-center">
-              <Row className="text-center g-3 my-auto">
+            <Card.Body className="bic-flex bic-flex-column bic-justify-center">
+              <Row className="bic-text-center bic-my-auto">
                 <Col sm={4}>
-                  <div className="text-muted small text-uppercase">Overall Availability</div>
-                  <h1 className={`display-5 fw-bold ${summary?.overall_availability_24h < 99 ? 'text-warning' : 'text-success'}`}>
-                    {summary?.overall_availability_24h !== undefined ? `${summary.overall_availability_24h}%` : '100%'}
-                  </h1>
+                  <div className="bic-stat-label">Overall Availability</div>
+                  <div className={`bic-stat-value bic-font-bold ${summary?.overall_availability_24h < 99 ? 'bic-text-warning' : 'bic-text-success'}`}>
+                    {summary?.overall_availability_24h !== undefined ? `${summary.overall_availability_24h}%` : '—'}
+                  </div>
                 </Col>
                 <Col sm={4}>
-                  <div className="text-muted small text-uppercase">Healthy Devices</div>
-                  <h1 className="display-5 fw-bold text-primary">
-                    {counts.up} <span className="fs-5 text-muted">/ {counts.total}</span>
-                  </h1>
+                  <div className="bic-stat-label">Healthy Devices</div>
+                  <div className="bic-stat-value bic-font-bold bic-text-brand">
+                    {counts.up} <span className="bic-text-lg bic-text-secondary">/ {counts.total}</span>
+                  </div>
                 </Col>
                 <Col sm={4}>
-                  <div className="text-muted small text-uppercase">Critical Incidents</div>
-                  <h1 className={`display-5 fw-bold ${infraCounts.down > 0 ? 'text-danger' : 'text-muted'}`}>
+                  <div className="bic-stat-label">Critical Incidents</div>
+                  <div className={`bic-stat-value bic-font-bold ${infraCounts.down > 0 ? 'bic-text-danger' : 'bic-text-secondary'}`}>
                     {infraCounts.down}
-                  </h1>
+                  </div>
                 </Col>
               </Row>
             </Card.Body>
@@ -260,18 +223,18 @@ export default function DashboardPage() {
       </Row>
 
       {/* Live Monitored Devices Table */}
-      <Card className="border-0 shadow-sm">
-        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Monitored Device Overview</h5>
-          <Link to="/devices" className="btn btn-outline-primary btn-sm">
+      <Card>
+        <Card.Header>
+          <h2 className="bic-section-title bic-mb-0">Monitored Device Overview</h2>
+          <Link to="/devices" className="bic-btn bic-btn-secondary bic-btn-sm">
             Manage All Devices <MdArrowForward />
           </Link>
         </Card.Header>
-        <Card.Body className="p-0">
-          <Table responsive hover className="mb-0 align-middle">
-            <thead className="table-light">
+        <Card.Body className="bic-p-0">
+          <Table responsive hover className="bic-mb-0">
+            <thead>
               <tr>
-                <th className="ps-4">Status</th>
+                <th className="bic-pl-6">Status</th>
                 <th>Device Name</th>
                 <th>IP Address</th>
                 <th>Category</th>
@@ -283,24 +246,24 @@ export default function DashboardPage() {
             <tbody>
               {loading && !summary ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-4">
-                    <Spinner animation="border" size="sm" variant="primary" /> Loading devices...
+                  <td colSpan="7" className="bic-empty">
+                    <Spinner size="sm" /> Loading devices...
                   </td>
                 </tr>
               ) : summary?.recent_devices?.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-4 text-muted">
+                  <td colSpan="7" className="bic-empty">
                     No devices registered. <Link to="/devices/new">Add a device</Link> to start monitoring.
                   </td>
                 </tr>
               ) : (
                 summary?.recent_devices?.map((dev) => (
                   <tr key={dev.id}>
-                    <td className="ps-4">
+                    <td className="bic-pl-6">
                       <StatusBadge status={dev.current_status} />
                     </td>
                     <td>
-                      <Link to={`/devices/${dev.id}`} className="fw-semibold text-decoration-none text-dark">
+                      <Link to={`/devices/${dev.id}`} className="bic-font-semibold bic-text-primary">
                         {dev.device_name}
                       </Link>
                     </td>
@@ -309,14 +272,14 @@ export default function DashboardPage() {
                     <td>{dev.location_name || '—'}</td>
                     <td>
                       {dev.current_latency !== null ? (
-                        <span className={`fw-semibold ${dev.current_latency > 100 ? 'text-warning' : 'text-success'}`}>
+                        <span className={`bic-font-semibold ${dev.current_latency > 100 ? 'bic-text-warning' : 'bic-text-success'}`}>
                           {dev.current_latency} ms
                         </span>
                       ) : (
-                        <span className="text-muted">—</span>
+                        <span className="bic-text-secondary">—</span>
                       )}
                     </td>
-                    <td className="small text-muted">
+                    <td className="bic-text-sm bic-text-secondary">
                       {dev.last_check ? dayjs(dev.last_check).format('HH:mm:ss') : 'Pending'}
                     </td>
                   </tr>

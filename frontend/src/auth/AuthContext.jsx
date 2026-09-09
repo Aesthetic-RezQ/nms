@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { get, post } from '../api/client';
+import { Spinner } from '../components/bic';
 
 const AuthContext = createContext();
 
@@ -62,7 +63,9 @@ export const AuthProvider = ({ children }) => {
     isViewer: !!user,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>
+    {loading ? <div className="bic-auth"><Spinner label="Verifying session" /></div> : children}
+  </AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);

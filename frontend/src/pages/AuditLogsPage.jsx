@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Form, Row, Col, Badge, Button, Modal, Spinner } from 'react-bootstrap';
+import { Card, Table, Form, Row, Col, Badge, Button, Modal, Spinner } from '../components/bic';
 import { MdSecurity, MdRefresh, MdVisibility, MdFilterList } from 'react-icons/md';
 import { get } from '../api/client';
 import dayjs from 'dayjs';
@@ -33,29 +33,30 @@ export default function AuditLogsPage() {
     if (action.includes('DELETED')) return 'danger';
     if (action.includes('CREATED') || action.includes('ADDED')) return 'success';
     if (action.includes('UPDATED') || action.includes('CHANGED') || action.includes('ACKNOWLEDGED')) return 'warning';
-    return 'primary';
+    return 'info';
   };
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div className="bic-page-header">
         <div>
-          <h2 className="mb-0 d-flex align-items-center gap-2">
+          <h1 className="bic-page-title bic-flex bic-items-center bic-gap-2">
             <MdSecurity /> Security Audit Logs
-          </h2>
-          <p className="text-muted small mb-0">Immutable records of administrative operations and configuration changes (PRD §42).</p>
+          </h1>
+          <p className="bic-page-subtitle">Immutable records of administrative operations and configuration changes.</p>
         </div>
-        <Button variant="outline-secondary" size="sm" onClick={fetchLogs} disabled={loading}>
+        <Button variant="secondary" size="sm" onClick={fetchLogs} disabled={loading}>
           <MdRefresh /> Refresh
         </Button>
       </div>
 
       {/* Filter Card */}
-      <Card className="border-0 shadow-sm mb-4">
+      <Card className="bic-mb-6">
         <Card.Body>
-          <Row className="g-3 align-items-center">
+          <Row className="bic-items-center">
             <Col md={4} sm={6}>
               <Form.Select
+                aria-label="Filter by administrative action"
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
               >
@@ -69,7 +70,7 @@ export default function AuditLogsPage() {
                 <option value="USER_LOGIN">User Login</option>
               </Form.Select>
             </Col>
-            <Col md={8} className="text-md-end text-muted small">
+            <Col md={8} className="bic-text-right-md bic-text-secondary bic-text-sm">
               Showing recent 50 audit entries
             </Col>
           </Row>
@@ -77,44 +78,44 @@ export default function AuditLogsPage() {
       </Card>
 
       {/* Audit Log Table */}
-      <Card className="border-0 shadow-sm">
-        <Card.Body className="p-0">
-          <Table responsive hover className="mb-0 align-middle">
-            <thead className="table-light">
+      <Card>
+        <Card.Body className="bic-p-0">
+          <Table responsive hover className="bic-mb-0">
+            <thead>
               <tr>
                 <th>Timestamp</th>
                 <th>Operator</th>
                 <th>Action</th>
                 <th>Target Object</th>
                 <th>Source IP</th>
-                <th className="text-end pe-3">Changes</th>
+                <th className="bic-text-right bic-pr-4">Changes</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-5 text-muted">
-                    <Spinner animation="border" size="sm" variant="primary" /> Loading audit logs...
+                  <td colSpan="6" className="bic-empty">
+                    <Spinner size="sm" /> Loading audit logs...
                   </td>
                 </tr>
               ) : logs.length > 0 ? (
                 logs.map((log) => (
                   <tr key={log.id}>
-                    <td className="small text-muted">{dayjs(log.created_at).format('YYYY-MM-DD HH:mm:ss')}</td>
-                    <td className="fw-semibold small">{log.username || 'System'}</td>
+                    <td className="bic-text-sm bic-text-secondary">{dayjs(log.created_at).format('YYYY-MM-DD HH:mm:ss')}</td>
+                    <td className="bic-font-semibold bic-text-sm">{log.username || 'System'}</td>
                     <td>
                       <Badge bg={getActionBadgeColor(log.action)}>
                         {log.action}
                       </Badge>
                     </td>
-                    <td className="small">
+                    <td className="bic-text-sm">
                       <code>{log.object_type || '—'}</code> {log.object_id && `(${log.object_id})`}
                     </td>
-                    <td className="small text-muted">{log.source_ip || '—'}</td>
-                    <td className="text-end pe-3">
+                    <td className="bic-text-sm bic-text-secondary">{log.source_ip || '—'}</td>
+                    <td className="bic-text-right bic-pr-4">
                       {(log.old_value || log.new_value) && (
                         <Button
-                          variant="outline-secondary"
+                          variant="secondary"
                           size="sm"
                           onClick={() => setSelectedLog(log)}
                           title="View change payload"
@@ -127,7 +128,7 @@ export default function AuditLogsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-5 text-muted">
+                  <td colSpan="6" className="bic-empty">
                     No audit records found matching criteria.
                   </td>
                 </tr>
@@ -140,24 +141,24 @@ export default function AuditLogsPage() {
       {/* Diff / Payload Modal */}
       <Modal show={!!selectedLog} onHide={() => setSelectedLog(null)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title className="h5">
+          <Modal.Title>
             Audit Details: {selectedLog?.action}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Row className="g-3">
+          <Row>
             {selectedLog?.old_value && (
               <Col md={6}>
-                <h6 className="text-muted small text-uppercase">Previous State</h6>
-                <pre className="bg-light p-3 rounded small" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                <h3 className="bic-text-secondary bic-text-sm">Previous State</h3>
+                <pre className="bic-code-block">
                   {JSON.stringify(selectedLog.old_value, null, 2)}
                 </pre>
               </Col>
             )}
             {selectedLog?.new_value && (
               <Col md={selectedLog?.old_value ? 6 : 12}>
-                <h6 className="text-muted small text-uppercase">New State / Payload</h6>
-                <pre className="bg-light p-3 rounded small" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                <h3 className="bic-text-secondary bic-text-sm">New State / Payload</h3>
+                <pre className="bic-code-block">
                   {JSON.stringify(selectedLog.new_value, null, 2)}
                 </pre>
               </Col>

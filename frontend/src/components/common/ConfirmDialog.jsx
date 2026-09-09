@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button } from '../bic';
 
 export default function ConfirmDialog({ show, title, message, onConfirm, onCancel, variant = 'danger' }) {
   return (

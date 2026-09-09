@@ -1,60 +1,55 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  MdDashboard, MdDevices, MdCategory, MdGroupWork, 
-  MdLocationOn, MdWarning, MdBuild, MdAssessment, 
-  MdPeople, MdSettings, MdSecurity 
-} from 'react-icons/md';
+import { MdDashboard, MdDevices, MdCategory, MdGroupWork, MdLocationOn, MdWarning, MdBuild, MdPeople, MdSettings, MdSecurity } from 'react-icons/md';
 import { useAuth } from '../auth/AuthContext';
+import { Button } from './bic';
 
-export default function Sidebar({ isOpen }) {
+const operations = [
+  ['/devices', 'Devices', MdDevices], ['/incidents', 'Incidents', MdWarning],
+  ['/maintenance', 'Maintenance', MdBuild], ['/categories', 'Categories', MdCategory],
+  ['/groups', 'Groups', MdGroupWork], ['/locations', 'Locations', MdLocationOn],
+];
+const administration = [['/users', 'Users', MdPeople], ['/audit-logs', 'Audit Logs', MdSecurity], ['/settings', 'Settings', MdSettings]];
+
+export default function Sidebar({ isOpen, onClose }) {
   const { isAdmin } = useAuth();
+  const sidebar = useRef(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const panel = sidebar.current;
+    // Wait for the responsive visibility change before moving keyboard focus.
+    const focusFrame = requestAnimationFrame(() => panel.querySelector('button').focus());
+    const keydown = event => {
+      if (event.key === 'Escape') { event.preventDefault(); onClose(); }
+      if (event.key === 'Tab') {
+        const items = [...panel.querySelectorAll('button, a')];
+        const first = items[0], last = items.at(-1);
+        if (!panel.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+        else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    };
+    const media = window.matchMedia('(min-width: 769px)');
+    const resize = () => { if (media.matches) onClose(); };
+    document.addEventListener('keydown', keydown);
+    media.addEventListener('change', resize);
+    return () => { cancelAnimationFrame(focusFrame); document.removeEventListener('keydown', keydown); media.removeEventListener('change', resize); };
+  }, [isOpen, onClose]);
 
-  return (
-    <div className={`sidebar ${isOpen ? 'show' : ''}`}>
-      <div className="p-4 d-flex align-items-center gap-2 text-white border-bottom border-secondary mb-3">
-        <img src="/logo.jpg" alt="NMS Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
-      </div>
-      
-      <nav className="nav flex-column px-2">
-        <NavLink to="/" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`} end>
-          <MdDashboard /> Dashboard
-        </NavLink>
-        <NavLink to="/devices" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-          <MdDevices /> Devices
-        </NavLink>
-        <NavLink to="/incidents" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-          <MdWarning /> Incidents
-        </NavLink>
-        <NavLink to="/maintenance" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-          <MdBuild /> Maintenance
-        </NavLink>
-        <NavLink to="/categories" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-          <MdCategory /> Categories
-        </NavLink>
-        <NavLink to="/groups" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-          <MdGroupWork /> Groups
-        </NavLink>
-        <NavLink to="/locations" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-          <MdLocationOn /> Locations
-        </NavLink>
+  const link = ([to, label, Icon]) => <NavLink key={to} to={to} end={to === '/'}
+    onClick={isOpen ? onClose : undefined} className={({ isActive }) => 'bic-nav-link' + (isActive ? ' is-active' : '')}>
+    <Icon /> {label}
+  </NavLink>;
 
-        {isAdmin && (
-          <>
-            <hr className="bg-secondary my-2" />
-            <h6 className="px-3 mt-2 mb-1 text-muted text-uppercase" style={{fontSize: '0.75rem'}}>Admin</h6>
-            <NavLink to="/users" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-              <MdPeople /> Users
-            </NavLink>
-            <NavLink to="/audit-logs" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-              <MdSecurity /> Audit Logs
-            </NavLink>
-            <NavLink to="/settings" className={({isActive}) => `nav-link text-decoration-none ${isActive ? 'active' : ''}`}>
-              <MdSettings /> Settings
-            </NavLink>
-          </>
-        )}
-      </nav>
-    </div>
-  );
+  return <aside ref={sidebar} id="app-sidebar" className={'bic-sidebar' + (isOpen ? ' is-open' : '')} aria-label="Application navigation">
+    <div className="bic-brand"><img src="/logo.jpg" alt="BIC" className="bic-brand-logo" /></div>
+    <div className="bic-sidebar-heading"><strong>Navigation</strong><Button variant="secondary" size="sm" onClick={onClose}>Close</Button></div>
+    <nav className="bic-nav" aria-label="Main navigation">
+      <div className="bic-nav-section">Overview</div>
+      {link(['/', 'Dashboard', MdDashboard])}
+      <div className="bic-nav-section">Operations</div>
+      {operations.map(link)}
+      {isAdmin && <><div className="bic-nav-section">Administration</div>{administration.map(link)}</>}
+    </nav>
+  </aside>;
 }

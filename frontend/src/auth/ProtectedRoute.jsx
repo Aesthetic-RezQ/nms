@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { Spinner } from 'react-bootstrap';
+import { Spinner } from '../components/bic';
 
 export default function ProtectedRoute({ children, requireAdmin }) {
   const { user, loading, isAdmin } = useAuth();
@@ -9,8 +9,8 @@ export default function ProtectedRoute({ children, requireAdmin }) {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <Spinner animation="border" />
+      <div className="bic-flex bic-justify-center bic-items-center bic-auth">
+        <Spinner />
       </div>
     );
   }
@@ -21,8 +21,9 @@ export default function ProtectedRoute({ children, requireAdmin }) {
 
   if (requireAdmin && !isAdmin) {
     return (
-      <div className="container mt-5">
-        <div className="alert alert-danger">403 - Forbidden: Admin access required.</div>
+      <div>
+        <div className="bic-page-header"><h1 className="bic-page-title">Access restricted</h1></div>
+        <div className="bic-alert bic-alert-danger" role="alert">403 - Forbidden: Admin access required.</div>
       </div>
     );
   }

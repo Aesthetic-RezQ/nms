@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "check:design": "node scripts/check-design-system.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

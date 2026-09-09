@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Table, Form, Row, Col, Button, Badge, Modal, Pagination, Spinner, Alert } from 'react-bootstrap';
+import { Card, Table, Form, Row, Col, Button, Badge, Modal, Pagination, Spinner, Alert } from '../components/bic';
 import { MdWarning, MdCheck, MdNoteAdd, MdRefresh, MdFilterList } from 'react-icons/md';
 import { get, post } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { toast } from 'react-toastify';
+import { toast } from '../components/bic/Notifications';
 import dayjs from 'dayjs';
 
 export default function IncidentsPage() {
@@ -102,42 +102,44 @@ export default function IncidentsPage() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div className="bic-page-header">
         <div>
-          <h2 className="mb-0 d-flex align-items-center gap-2">
-            <MdWarning className="text-danger" /> Incident Management
-          </h2>
-          <p className="text-muted small mb-0">Track network outages, downtime, and operational resolution.</p>
+          <h1 className="bic-page-title bic-flex bic-items-center bic-gap-2">
+            <MdWarning /> Incident Management
+          </h1>
+          <p className="bic-page-subtitle">Track network outages, downtime, and operational resolution.</p>
         </div>
-        <Button variant="outline-secondary" size="sm" onClick={fetchIncidents} disabled={loading}>
+        <Button variant="secondary" size="sm" onClick={fetchIncidents} disabled={loading}>
           <MdRefresh /> Refresh
         </Button>
       </div>
 
       {/* Filter Bar */}
-      <Card className="border-0 shadow-sm mb-4">
+      <Card className="bic-mb-6">
         <Card.Body>
-          <Row className="g-3 align-items-center">
+          <Row className="bic-items-center">
             <Col md={4} sm={6}>
               <Form.Select
+                aria-label="Filter by incident status"
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               >
                 <option value="">All Statuses</option>
-                <option value="OPEN">🔴 OPEN (Active Outages)</option>
-                <option value="ACKNOWLEDGED">🟡 ACKNOWLEDGED</option>
-                <option value="RESOLVED">🟢 RESOLVED</option>
+                <option value="OPEN">OPEN (Active Outages)</option>
+                <option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
+                <option value="RESOLVED">RESOLVED</option>
               </Form.Select>
             </Col>
             <Col md={5} sm={6}>
               <Form.Control
                 type="text"
+                aria-label="Search incidents"
                 placeholder="Search by device, IP, or reason..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
             </Col>
-            <Col md={3} className="text-md-end text-muted small">
+            <Col md={3} className="bic-text-right-md bic-text-secondary bic-text-sm">
               Found <strong>{total}</strong> incident{total !== 1 ? 's' : ''}
             </Col>
           </Row>
@@ -145,10 +147,10 @@ export default function IncidentsPage() {
       </Card>
 
       {/* Incidents Table */}
-      <Card className="border-0 shadow-sm">
-        <Card.Body className="p-0">
-          <Table responsive hover className="mb-0 align-middle">
-            <thead className="table-light">
+      <Card>
+        <Card.Body className="bic-p-0">
+          <Table responsive hover className="bic-mb-0">
+            <thead>
               <tr>
                 <th>Status</th>
                 <th>Device</th>
@@ -156,15 +158,15 @@ export default function IncidentsPage() {
                 <th>Recovered / Duration</th>
                 <th>Failure Reason</th>
                 <th>Acknowledged</th>
-                {(isOperator || isAdmin) && <th className="text-end">Actions</th>}
+                {(isOperator || isAdmin) && <th className="bic-text-right">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {loading && incidents.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-5">
-                    <Spinner animation="border" variant="primary" size="sm" />
-                    <span className="ms-2 text-muted">Loading incidents...</span>
+                  <td colSpan="7" className="bic-empty">
+                    <Spinner size="sm" />
+                    <span className="bic-ml-2 bic-text-secondary">Loading incidents...</span>
                   </td>
                 </tr>
               ) : incidents.length > 0 ? (
@@ -176,47 +178,47 @@ export default function IncidentsPage() {
                       </Badge>
                     </td>
                     <td>
-                      <Link to={`/devices/${inc.device_id}`} className="fw-semibold text-decoration-none text-dark">
+                      <Link to={`/devices/${inc.device_id}`} className="bic-font-semibold bic-text-primary">
                         {inc.device_name}
                       </Link>
-                      <div className="text-muted small">
+                      <div className="bic-text-secondary bic-text-sm">
                         <code>{inc.ip_address}</code> {inc.location_name && `• ${inc.location_name}`}
                       </div>
                     </td>
-                    <td className="small">
+                    <td className="bic-text-sm">
                       {dayjs(inc.down_since).format('YYYY-MM-DD HH:mm:ss')}
                     </td>
-                    <td className="small">
+                    <td className="bic-text-sm">
                       {inc.recovered_at ? (
                         <>
                           <div>{dayjs(inc.recovered_at).format('YYYY-MM-DD HH:mm:ss')}</div>
-                          <strong className="text-success">{inc.duration_formatted}</strong>
+                          <strong className="bic-text-success">{inc.duration_formatted}</strong>
                         </>
                       ) : (
-                        <Badge bg="danger" className="p-1">Ongoing Outage</Badge>
+                        <Badge bg="danger">Ongoing Outage</Badge>
                       )}
                     </td>
-                    <td className="small text-muted" style={{ maxWidth: '200px' }}>
+                    <td className="bic-text-sm bic-text-secondary bic-table-note">
                       {inc.failure_reason || '—'}
                     </td>
-                    <td className="small">
+                    <td className="bic-text-sm">
                       {inc.is_acknowledged ? (
                         <div>
-                          <span className="text-success fw-semibold">✓ {inc.acknowledged_by_name || 'Staff'}</span>
-                          <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          <span className="bic-text-success bic-font-semibold">✓ {inc.acknowledged_by_name || 'Staff'}</span>
+                          <div className="bic-text-secondary bic-text-xs">
                             {dayjs(inc.acknowledged_at).format('HH:mm:ss')}
                           </div>
                         </div>
                       ) : (
-                        <span className="text-muted">—</span>
+                        <span className="bic-text-secondary">—</span>
                       )}
                     </td>
                     {(isOperator || isAdmin) && (
-                      <td className="text-end">
-                        <div className="btn-group btn-group-sm">
+                      <td className="bic-text-right">
+                        <div className="bic-button-group bic-button-group-sm">
                           {!inc.is_acknowledged && inc.status !== 'RESOLVED' && (
                             <Button
-                              variant="outline-warning"
+                              variant="secondary"
                               size="sm"
                               onClick={() => handleOpenAcknowledge(inc)}
                               title="Acknowledge Incident"
@@ -225,7 +227,7 @@ export default function IncidentsPage() {
                             </Button>
                           )}
                           <Button
-                            variant="outline-secondary"
+                            variant="secondary"
                             size="sm"
                             onClick={() => handleOpenAddNote(inc)}
                             title="Add Note"
@@ -239,7 +241,7 @@ export default function IncidentsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center py-5 text-muted">
+                  <td colSpan="7" className="bic-empty">
                     No incidents matching your filter criteria.
                   </td>
                 </tr>
@@ -250,8 +252,8 @@ export default function IncidentsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <Card.Footer className="bg-white d-flex justify-content-center py-3">
-            <Pagination className="mb-0">
+          <Card.Footer className="bic-flex bic-justify-center bic-py-4">
+            <Pagination className="bic-mb-0">
               <Pagination.Prev disabled={page === 1} onClick={() => setPage(p => p - 1)} />
               {[...Array(totalPages)].map((_, i) => (
                 <Pagination.Item key={i + 1} active={i + 1 === page} onClick={() => setPage(i + 1)}>
@@ -268,13 +270,13 @@ export default function IncidentsPage() {
       <Modal show={showAckModal} onHide={() => setShowAckModal(false)} centered>
         <Form onSubmit={handleConfirmAcknowledge}>
           <Modal.Header closeButton>
-            <Modal.Title className="h5">Acknowledge Incident</Modal.Title>
+            <Modal.Title>Acknowledge Incident</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <p>
               Are you acknowledging the outage on <strong>{selectedIncident?.device_name}</strong> (<code>{selectedIncident?.ip_address}</code>)?
             </p>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Investigation Notes (Optional)</Form.Label>
               <Form.Control
                 as="textarea"
@@ -287,7 +289,7 @@ export default function IncidentsPage() {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowAckModal(false)}>Cancel</Button>
-            <Button variant="warning" type="submit" disabled={ackSubmitting}>
+            <Button variant="primary" type="submit" disabled={ackSubmitting}>
               {ackSubmitting ? 'Acknowledging...' : 'Confirm Acknowledge'}
             </Button>
           </Modal.Footer>
@@ -298,18 +300,18 @@ export default function IncidentsPage() {
       <Modal show={showNoteModal} onHide={() => setShowNoteModal(false)} centered>
         <Form onSubmit={handleConfirmAddNote}>
           <Modal.Header closeButton>
-            <Modal.Title className="h5">Add Incident Note</Modal.Title>
+            <Modal.Title>Add Incident Note</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {selectedIncident?.notes && (
-              <div className="bg-light p-2 rounded mb-3 small" style={{ maxHeight: '120px', overflowY: 'auto' }}>
-                <div className="fw-semibold text-muted mb-1">Previous Notes:</div>
-                <pre className="mb-0 text-dark" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+              <div className="bic-inset bic-p-2 bic-mb-4 bic-text-sm bic-scroll-area-sm">
+                <div className="bic-font-semibold bic-text-secondary bic-mb-1">Previous Notes:</div>
+                <pre className="bic-mb-0 bic-text-primary bic-pre-wrap">
                   {selectedIncident.notes}
                 </pre>
               </div>
             )}
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>New Note</Form.Label>
               <Form.Control
                 as="textarea"

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, Card, Modal, Form } from 'react-bootstrap';
+import { Button, Table, Card, Modal, Form } from '../components/bic';
 import { MdAdd, MdEdit, MdDelete } from 'react-icons/md';
-import { toast } from 'react-toastify';
+import { toast } from '../components/bic/Notifications';
 import { get, post, put, del } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -72,44 +72,44 @@ export default function LocationsPage() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Locations</h2>
+      <div className="bic-page-header">
+        <h1 className="bic-page-title">Locations</h1>
         {isAdmin && (
           <Button variant="primary" onClick={() => handleOpenModal()}>
-            <MdAdd className="me-1" /> Add Location
+            <MdAdd className="bic-mr-1" /> Add Location
           </Button>
         )}
       </div>
 
-      <Card className="shadow-sm">
-        <Table responsive hover className="mb-0">
-          <thead className="table-light">
+      <Card>
+        <Table responsive hover className="bic-mb-0">
+          <thead>
             <tr>
               <th>Name</th>
               <th>Description</th>
               <th>Address</th>
-              <th>Actions</th>
+              <th className="bic-text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="4" className="text-center py-4">Loading...</td></tr>
+              <tr><td colSpan="4" className="bic-empty">Loading...</td></tr>
             ) : locations.length === 0 ? (
-              <tr><td colSpan="4" className="text-center py-4">No locations found</td></tr>
+              <tr><td colSpan="4" className="bic-empty">No locations found</td></tr>
             ) : (
               locations.map(l => (
                 <tr key={l.id}>
                   <td>{l.name}</td>
                   <td>{l.description}</td>
                   <td>{l.address}</td>
-                  <td>
+                  <td className="bic-text-right">
                     {isAdmin && (
                       <>
-                        <Button variant="link" className="p-0 text-primary me-2" onClick={() => handleOpenModal(l)}>
-                          <MdEdit size={18} />
+                        <Button variant="secondary" size="sm" className="bic-mr-2" title="Edit location" onClick={() => handleOpenModal(l)}>
+                          <MdEdit />
                         </Button>
-                        <Button variant="link" className="p-0 text-danger" onClick={() => setDeleteId(l.id)}>
-                          <MdDelete size={18} />
+                        <Button variant="danger" size="sm" title="Delete location" onClick={() => setDeleteId(l.id)}>
+                          <MdDelete />
                         </Button>
                       </>
                     )}
@@ -127,15 +127,15 @@ export default function LocationsPage() {
             <Modal.Title>{formData.id ? 'Edit Location' : 'Add Location'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Name *</Form.Label>
               <Form.Control required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Description</Form.Label>
               <Form.Control as="textarea" value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} />
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Address</Form.Label>
               <Form.Control value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} />
             </Form.Group>

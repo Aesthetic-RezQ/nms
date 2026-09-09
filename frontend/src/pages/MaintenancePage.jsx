@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Modal, Form, Row, Col, Badge, Spinner } from 'react-bootstrap';
+import { Card, Table, Button, Modal, Form, Row, Col, Badge, Spinner } from '../components/bic';
 import { MdAdd, MdEdit, MdDelete, MdBuild, MdCheckCircle, MdAccessTime } from 'react-icons/md';
-import { toast } from 'react-toastify';
+import { toast } from '../components/bic/Notifications';
 import { get, post, put, del } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -149,24 +149,24 @@ export default function MaintenancePage() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div className="bic-page-header">
         <div>
-          <h2 className="mb-0 d-flex align-items-center gap-2">
+          <h1 className="bic-page-title bic-flex bic-items-center bic-gap-2">
             <MdBuild /> Maintenance Windows
-          </h2>
-          <p className="text-muted small mb-0">Schedule planned maintenance periods to suppress outage alarms (PRD §20).</p>
+          </h1>
+          <p className="bic-page-subtitle">Schedule planned maintenance periods to suppress outage alarms.</p>
         </div>
         {isAdmin && (
           <Button variant="primary" onClick={handleOpenCreate}>
-            <MdAdd className="me-1" /> Schedule Maintenance
+            <MdAdd className="bic-mr-1" /> Schedule Maintenance
           </Button>
         )}
       </div>
 
-      <Card className="border-0 shadow-sm mb-4">
-        <Card.Body className="p-0">
-          <Table responsive hover className="mb-0 align-middle">
-            <thead className="table-light">
+      <Card className="bic-mb-6">
+        <Card.Body className="bic-p-0">
+          <Table responsive hover className="bic-mb-0">
+            <thead>
               <tr>
                 <th>Status</th>
                 <th>Name / Description</th>
@@ -174,14 +174,14 @@ export default function MaintenancePage() {
                 <th>End Time</th>
                 <th>Assigned Devices</th>
                 <th>Created By</th>
-                {isAdmin && <th className="text-end pe-3">Actions</th>}
+                {isAdmin && <th className="bic-text-right bic-pr-4">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-5 text-muted">
-                    <Spinner animation="border" size="sm" variant="primary" /> Loading windows...
+                  <td colSpan="7" className="bic-empty">
+                    <Spinner size="sm" /> Loading windows...
                   </td>
                 </tr>
               ) : windows.length > 0 ? (
@@ -189,34 +189,34 @@ export default function MaintenancePage() {
                   <tr key={win.id}>
                     <td>
                       {win.is_currently_active ? (
-                        <Badge bg="info" className="p-1 px-2">🔵 ACTIVE NOW</Badge>
+                        <Badge bg="info">ACTIVE NOW</Badge>
                       ) : !win.is_active ? (
-                        <Badge bg="secondary">Disabled</Badge>
+                        <Badge bg="info">Disabled</Badge>
                       ) : dayjs().isAfter(win.end_time) ? (
-                        <Badge bg="light" text="dark" className="border">Ended</Badge>
+                        <Badge bg="info">Ended</Badge>
                       ) : (
-                        <Badge bg="primary">Scheduled</Badge>
+                        <Badge bg="info">Scheduled</Badge>
                       )}
                     </td>
                     <td>
-                      <div className="fw-semibold text-dark">{win.name}</div>
-                      {win.description && <div className="text-muted small">{win.description}</div>}
+                      <div className="bic-font-semibold bic-text-primary">{win.name}</div>
+                      {win.description && <div className="bic-text-secondary bic-text-sm">{win.description}</div>}
                     </td>
-                    <td className="small">{dayjs(win.start_time).format('YYYY-MM-DD HH:mm')}</td>
-                    <td className="small">{dayjs(win.end_time).format('YYYY-MM-DD HH:mm')}</td>
+                    <td className="bic-text-sm">{dayjs(win.start_time).format('YYYY-MM-DD HH:mm')}</td>
+                    <td className="bic-text-sm">{dayjs(win.end_time).format('YYYY-MM-DD HH:mm')}</td>
                     <td>
-                      <Badge bg="light" text="dark" className="border">
+                      <Badge bg="info">
                         {win.devices_count} device{win.devices_count !== 1 ? 's' : ''}
                       </Badge>
                     </td>
-                    <td className="small text-muted">{win.created_by_name || 'Admin'}</td>
+                    <td className="bic-text-sm bic-text-secondary">{win.created_by_name || 'Admin'}</td>
                     {isAdmin && (
-                      <td className="text-end pe-3">
-                        <div className="btn-group btn-group-sm">
-                          <Button variant="outline-primary" onClick={() => handleOpenEdit(win)} title="Edit">
+                      <td className="bic-text-right bic-pr-4">
+                        <div className="bic-button-group bic-button-group-sm">
+                          <Button variant="secondary" onClick={() => handleOpenEdit(win)} title="Edit">
                             <MdEdit />
                           </Button>
-                          <Button variant="outline-danger" onClick={() => setDeleteId(win.id)} title="Delete">
+                          <Button variant="danger" onClick={() => setDeleteId(win.id)} title="Delete">
                             <MdDelete />
                           </Button>
                         </div>
@@ -226,7 +226,7 @@ export default function MaintenancePage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center py-5 text-muted">
+                  <td colSpan="7" className="bic-empty">
                     No scheduled maintenance windows.
                   </td>
                 </tr>
@@ -240,12 +240,12 @@ export default function MaintenancePage() {
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
         <Form onSubmit={handleSubmit}>
           <Modal.Header closeButton>
-            <Modal.Title className="h5">
+            <Modal.Title>
               {editingId ? 'Edit Maintenance Window' : 'Schedule Maintenance Window'}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Row className="g-3 mb-3">
+            <Row className="bic-mb-4">
               <Col md={8}>
                 <Form.Group>
                   <Form.Label>Window Name *</Form.Label>
@@ -258,7 +258,7 @@ export default function MaintenancePage() {
                   />
                 </Form.Group>
               </Col>
-              <Col md={4} className="d-flex align-items-end">
+              <Col md={4} className="bic-flex bic-items-end">
                 <Form.Check
                   type="checkbox"
                   id="active-chk"
@@ -269,7 +269,7 @@ export default function MaintenancePage() {
               </Col>
             </Row>
 
-            <Form.Group className="mb-3">
+            <Form.Group className="bic-mb-4">
               <Form.Label>Description (Optional)</Form.Label>
               <Form.Control
                 as="textarea"
@@ -280,7 +280,7 @@ export default function MaintenancePage() {
               />
             </Form.Group>
 
-            <Row className="g-3 mb-3">
+            <Row className="bic-mb-4">
               <Col md={6}>
                 <Form.Group>
                   <Form.Label>Start Time *</Form.Label>
@@ -305,18 +305,18 @@ export default function MaintenancePage() {
               </Col>
             </Row>
 
-            <Form.Group className="mb-3">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <Form.Label className="mb-0 fw-semibold">
+            <Form.Group className="bic-mb-4">
+              <div className="bic-flex bic-justify-between bic-items-center bic-mb-2">
+                <span id="affected-devices-label" className="bic-label bic-mb-0">
                   Affected Devices ({formData.device_ids.length} selected)
-                </Form.Label>
-                <div className="btn-group btn-group-sm">
-                  <Button variant="outline-secondary" size="sm" onClick={handleSelectAllDevices}>Select All</Button>
-                  <Button variant="outline-secondary" size="sm" onClick={handleDeselectAllDevices}>Deselect All</Button>
+                </span>
+                <div className="bic-button-group bic-button-group-sm">
+                  <Button variant="secondary" size="sm" onClick={handleSelectAllDevices}>Select All</Button>
+                  <Button variant="secondary" size="sm" onClick={handleDeselectAllDevices}>Deselect All</Button>
                 </div>
               </div>
-              <div className="border rounded p-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                <Row className="g-2">
+              <div className="bic-inset bic-scroll-area" role="group" aria-labelledby="affected-devices-label">
+                <Row className="bic-gap-2">
                   {devices.map(dev => (
                     <Col md={6} key={dev.id}>
                       <Form.Check
