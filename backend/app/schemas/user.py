@@ -18,6 +18,7 @@ class UserUpdate(BaseModel):
 
 class UserRead(BaseModel):
     id: UUID
+    central_user_id: Optional[UUID] = None
     username: str
     email: str
     full_name: Optional[str] = None

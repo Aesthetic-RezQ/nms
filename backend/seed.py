@@ -4,7 +4,6 @@ from sqlalchemy import select
 from app.config import settings
 from app.models.base import Base
 from app.models import User, Device, Category, DeviceGroup, Location, SystemSetting, AuditLog
-from app.core.security import hash_password
 
 async def seed():
     engine = create_async_engine(settings.database_url)
@@ -15,10 +14,9 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
     
     async with async_session() as db:
-        admin = await db.execute(select(User).where(User.username == "admin"))
-        if not admin.scalars().first():
-            db.add(User(username="admin", email="admin@nms.local", password_hash=hash_password("admin"), role="admin", full_name="System Admin"))
-            
+        # User identities and passwords are provisioned in CentralAuth. This
+        # seed creates monitoring data only and intentionally does not create a
+        # local administrator account.
         # Standard infrastructure categories (CRITICAL by default)
         categories = ["Firewall", "Router", "Core Switch", "Distribution Switch", "Access Switch", "Server", "Virtual Machine", "Access Point", "CCTV", "NVR", "Printer", "PLC", "UPS", "Storage", "IoT", "Other"]
         for c in categories:

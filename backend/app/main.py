@@ -57,9 +57,16 @@ async def startup_event():
 
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            # Existing installations were created before CentralAuth was
+            # introduced. Keep their monitoring data and add only the nullable
+            # identity mapping needed for the cache.
+            if conn.dialect.name == "postgresql":
+                from sqlalchemy import text
+                await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS central_user_id VARCHAR(36)"))
+                await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_central_user_id ON users (central_user_id)"))
         logger.info("Database tables ensured.")
 
-        # Run seed to create default admin user and base data
+        # Seed monitoring data only; identities are provisioned in CentralAuth.
         from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
         from sqlalchemy import select
         from app.models.user import User
@@ -67,22 +74,9 @@ async def startup_event():
         from app.models.group import DeviceGroup
         from app.models.location import Location
         from app.models.system_setting import SystemSetting
-        from app.core.security import hash_password
 
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as db:
-            # Create default admin if not exists
-            res = await db.execute(select(User).where(User.username == "admin"))
-            if not res.scalars().first():
-                db.add(User(
-                    username="admin",
-                    email="admin@nms.local",
-                    password_hash=hash_password("admin"),
-                    role="admin",
-                    full_name="System Admin"
-                ))
-                logger.info("Default admin user created.")
-
             # Seed categories
             for name in ["Firewall", "Router", "Core Switch", "Distribution Switch", "Access Switch",
                          "Server", "Virtual Machine", "Access Point", "CCTV", "NVR",
@@ -124,4 +118,3 @@ async def startup_event():
         logger.info("Seed data verified.")
     except Exception as e:
         logger.error(f"Startup initialization error: {e}")
-

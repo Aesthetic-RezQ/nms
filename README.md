@@ -51,8 +51,30 @@ Before shipping UI changes, run `npm run check:design` and `npm run build` from
 and form dialogs.
 
 ## Default Login
-- **Username:** admin
-- **Password:** admin
+NMS no longer authenticates local passwords. Create or use an account in the
+Central Authentication Service, grant it access to application code `NMS`, and
+sign in with that CentralAuth username and password.
+
+Set `CENTRAL_AUTH_URL` in `.env` to the CentralAuth web/API URL. The NMS backend
+calls only `/api/v1/auth/login`, `/refresh`, `/logout`, `/me`, and
+`/permissions`; it never connects to the CentralAuth database. Session tokens
+are held in Secure/HttpOnly cookies (set `AUTH_COOKIE_SECURE=true` behind TLS).
+
+### CentralAuth application setup
+
+CentralAuth seeds the `NMS` application registration. In the CentralAuth admin
+portal, create these NMS roles and assign the matching permissions:
+
+- `NMS_ADMIN`: all `nms.*` permissions
+- `NMS_OPERATOR`: `nms.dashboard.view`, `nms.device.view`,
+  `nms.device.edit`, `nms.alert.view`, `nms.alert.manage`,
+  `nms.config.view`
+- `NMS_VIEWER`: `nms.dashboard.view`, `nms.device.view`, `nms.alert.view`,
+  `nms.config.view`
+
+Grant each user application access to `NMS` and assign one of those roles.
+NMS derives the displayed role from the CentralAuth permission response and
+enforces the same policy on every protected backend endpoint.
 
 ## Project Structure
 - `/backend`: FastAPI backend application

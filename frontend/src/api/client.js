@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const client = axios.create({
   baseURL: '/api',
+  withCredentials: true,
 });
 
 // Add trailing slashes only to collection endpoints (single-segment paths
@@ -19,34 +20,17 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthRequest = originalRequest?.url?.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) throw new Error('No refresh token');
-        const res = await axios.post('/api/auth/refresh', {
-          refresh_token: refreshToken
-        });
-        localStorage.setItem('token', res.data.access_token);
-        if (res.data.refresh_token) {
-          localStorage.setItem('refresh_token', res.data.refresh_token);
-        }
+        await axios.post('/api/auth/refresh', null, { withCredentials: true });
         return client(originalRequest);
       } catch (err) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
         window.location.href = '/login';
         return Promise.reject(err);
       }

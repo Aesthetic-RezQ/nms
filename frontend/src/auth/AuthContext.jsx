@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { get, post } from '../api/client';
 import { Spinner } from '../components/bic';
 
@@ -6,62 +6,41 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
+  const loadUser = async () => {
+    try {
+      const res = await get('/auth/me');
+      setUser(res.data);
+      return res.data;
+    } catch (error) {
+      setUser(null);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    const initAuth = async () => {
-      if (token) {
-        try {
-          const res = await get('/auth/me');
-          setUser(res.data);
-        } catch (error) {
-          console.error("Token verification failed", error);
-          logout();
-        }
-      }
-      setLoading(false);
-    };
-    initAuth();
-  }, [token]);
+    loadUser().finally(() => setLoading(false));
+  }, []);
 
   const login = async (username, password) => {
     const res = await post('/auth/login', { username, password });
-    const { access_token, refresh_token } = res.data;
-    localStorage.setItem('token', access_token);
-    if (refresh_token) {
-      localStorage.setItem('refresh_token', refresh_token);
-    }
-    setToken(access_token);
-    const userRes = await get('/auth/me');
-    setUser(userRes.data);
+    setUser(res.data.user || await loadUser());
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try { await post('/auth/logout'); } finally { setUser(null); }
   };
 
   const refreshToken = async () => {
     const res = await post('/auth/refresh');
-    const { access_token } = res.data;
-    localStorage.setItem('token', access_token);
-    setToken(access_token);
+    setUser(res.data.user || await loadUser());
   };
 
-  const value = {
-    user,
-    token,
-    loading,
-    login,
-    logout,
-    refreshToken,
-    isAdmin: user?.role === 'admin',
-    isOperator: user?.role === 'operator' || user?.role === 'admin',
-    isViewer: !!user,
-  };
+  const isAdmin = user?.role === 'NMS_ADMIN' || user?.role === 'admin';
+  const isOperator = isAdmin || user?.role === 'NMS_OPERATOR' || user?.role === 'operator';
+
+  const value = { user, token: null, loading, login, logout, refreshToken, isAdmin, isOperator, isViewer: !!user };
 
   return <AuthContext.Provider value={value}>
     {loading ? <div className="bic-auth"><Spinner label="Verifying session" /></div> : children}

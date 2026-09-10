@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { MdDashboard, MdDevices, MdCategory, MdGroupWork, MdLocationOn, MdWarning, MdBuild, MdPeople, MdSettings, MdSecurity } from 'react-icons/md';
+import { MdDashboard, MdDevices, MdCategory, MdGroupWork, MdLocationOn, MdWarning, MdBuild, MdSettings, MdSecurity } from 'react-icons/md';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from './bic';
 
@@ -9,7 +9,7 @@ const operations = [
   ['/maintenance', 'Maintenance', MdBuild], ['/categories', 'Categories', MdCategory],
   ['/groups', 'Groups', MdGroupWork], ['/locations', 'Locations', MdLocationOn],
 ];
-const administration = [['/users', 'Users', MdPeople], ['/audit-logs', 'Audit Logs', MdSecurity], ['/settings', 'Settings', MdSettings]];
+const administration = [['/audit-logs', 'Audit Logs', MdSecurity], ['/settings', 'Settings', MdSettings]];
 
 export default function Sidebar({ isOpen, onClose }) {
   const { isAdmin } = useAuth();

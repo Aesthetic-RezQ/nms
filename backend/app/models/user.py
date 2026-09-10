@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Boolean
+from sqlalchemy import String, Boolean, Index
 from sqlalchemy.dialects.postgresql import UUID
 from app.models.base import Base, TimestampMixin
 import uuid
@@ -14,3 +14,7 @@ class User(Base, TimestampMixin):
     full_name: Mapped[str] = mapped_column(String(100), nullable=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="viewer")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Immutable identity mapping returned by CentralAuth. Legacy local user
+    # rows may remain during rollback and migration; they are never used for
+    # password authentication after the CentralAuth cutover.
+    central_user_id: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True, index=True)

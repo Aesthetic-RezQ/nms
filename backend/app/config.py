@@ -11,6 +11,16 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "supersecretkey"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # Central Authentication Service integration. NMS never connects to the
+    # CentralAuth database; all identity and authorization data comes through
+    # these APIs.
+    CENTRAL_AUTH_URL: str = "http://localhost:8080"
+    CENTRAL_AUTH_APPLICATION_CODE: str = "NMS"
+    CENTRAL_AUTH_TIMEOUT_SECONDS: float = 5.0
+    AUTH_COOKIE_SECURE: bool = False
+    AUTH_COOKIE_SAMESITE: str = "lax"
+    AUTH_COOKIE_DOMAIN: str | None = None
     
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
     

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.schemas.user import UserCreate, UserUpdate, UserRead
@@ -17,7 +17,7 @@ async def list_users(page: int = 1, page_size: int = 10, db: AsyncSession = Depe
 @router.post("", response_model=UserRead)
 @router.post("/", response_model=UserRead, include_in_schema=False)
 async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db), _ = Depends(require_admin)):
-    return await UserService.create(db, user_data)
+    raise HTTPException(status_code=410, detail="User administration is managed in CentralAuth")
 
 @router.get("/{user_id}", response_model=UserRead)
 async def get_user(user_id: UUID, db: AsyncSession = Depends(get_db), _ = Depends(require_admin)):
@@ -25,9 +25,8 @@ async def get_user(user_id: UUID, db: AsyncSession = Depends(get_db), _ = Depend
 
 @router.put("/{user_id}", response_model=UserRead)
 async def update_user(user_id: UUID, user_data: UserUpdate, db: AsyncSession = Depends(get_db), _ = Depends(require_admin)):
-    return await UserService.update(db, user_id, user_data)
+    raise HTTPException(status_code=410, detail="User administration is managed in CentralAuth")
 
 @router.delete("/{user_id}", response_model=MessageResponse)
 async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_db), _ = Depends(require_admin)):
-    await UserService.delete(db, user_id)
-    return MessageResponse(message="User deleted successfully")
+    raise HTTPException(status_code=410, detail="User administration is managed in CentralAuth")

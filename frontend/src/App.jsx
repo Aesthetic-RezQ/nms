@@ -14,7 +14,6 @@ import MaintenancePage from './pages/MaintenancePage';
 import CategoriesPage from './pages/CategoriesPage';
 import GroupsPage from './pages/GroupsPage';
 import LocationsPage from './pages/LocationsPage';
-import UsersPage from './pages/UsersPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -37,7 +36,6 @@ function App() {
             <Route path="locations" element={<LocationsPage />} />
             
             {/* Admin only routes */}
-            <Route path="users" element={<ProtectedRoute requireAdmin><UsersPage /></ProtectedRoute>} />
             <Route path="audit-logs" element={<ProtectedRoute requireAdmin><AuditLogsPage /></ProtectedRoute>} />
             <Route path="settings" element={<ProtectedRoute requireAdmin><SettingsPage /></ProtectedRoute>} />
             
