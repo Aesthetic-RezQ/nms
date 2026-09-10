@@ -11,6 +11,8 @@ export default function Layout() {
   const account = useRef(null);
   const menuButton = useRef(null);
   const location = useLocation();
+  const pageName = location.pathname.split('/').filter(Boolean)[0] || 'dashboard';
+  const pageLabel = pageName.replace(/-/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -48,11 +50,16 @@ export default function Layout() {
             <button ref={menuButton} type="button" className="bic-btn bic-btn-secondary bic-menu-toggle"
               aria-label="Open navigation" aria-controls="app-sidebar" aria-expanded={sidebarOpen}
               onClick={() => setSidebarOpen(true)}><MdMenu /></button>
-            <strong className="bic-topbar-label">Network Monitoring System</strong>
+            <div className="bic-topbar-heading">
+              <span className="bic-topbar-eyebrow">NMS Workspace</span>
+              <strong className="bic-topbar-label">{pageLabel}</strong>
+            </div>
           </div>
           <details ref={account} className="bic-dropdown">
             <summary className="bic-btn bic-btn-secondary"><MdPerson /> {user?.full_name || user?.username || 'User'} <MdExpandMore /></summary>
             <div className="bic-dropdown-menu">
+              <p className="bic-dropdown-name">{user?.full_name || user?.username}</p>
+              <p className="bic-text-secondary bic-text-sm">{user?.email}</p>
               <p className="bic-text-secondary bic-text-sm">Role: {user?.role}</p>
               <Button variant="secondary" className="bic-w-full" onClick={logout}>Logout</Button>
             </div>

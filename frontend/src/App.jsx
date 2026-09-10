@@ -16,6 +16,7 @@ import GroupsPage from './pages/GroupsPage';
 import LocationsPage from './pages/LocationsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import SettingsPage from './pages/SettingsPage';
+import UsersPage from './pages/UsersPage';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
             {/* Admin only routes */}
             <Route path="audit-logs" element={<ProtectedRoute requireAdmin><AuditLogsPage /></ProtectedRoute>} />
             <Route path="settings" element={<ProtectedRoute requireAdmin><SettingsPage /></ProtectedRoute>} />
+            <Route path="users" element={<ProtectedRoute requireAdmin><UsersPage /></ProtectedRoute>} />
             
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

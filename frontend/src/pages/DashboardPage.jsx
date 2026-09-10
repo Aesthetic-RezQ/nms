@@ -95,6 +95,7 @@ export default function DashboardPage() {
       {/* Top Header */}
       <div className="bic-page-header">
         <div>
+          <p className="bic-page-kicker">OVERVIEW</p>
           <h1 className="bic-page-title bic-flex bic-items-center bic-gap-2">
             Network Dashboard
             {wsConnected && (

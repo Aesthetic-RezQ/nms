@@ -1,92 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, Card, Modal, Form, Badge } from '../components/bic';
-import { MdAdd, MdEdit, MdDelete } from 'react-icons/md';
+import { Alert, Badge, Card, Spinner, Table } from '../components/bic';
 import { toast } from '../components/bic/Notifications';
-import { get, post, put, del } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
-import ConfirmDialog from '../components/common/ConfirmDialog';
-import { USER_ROLES } from '../utils/constants';
+import { get } from '../api/client';
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user: currentUser } = useAuth();
-  
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ id: null, username: '', email: '', password: '', full_name: '', role: 'viewer', is_active: true });
-  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await get('/users?page_size=100');
-      setUsers(res.data.data || res.data.items || (Array.isArray(res.data) ? res.data : []));
-    } catch (error) {
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOpenModal = (usr = null) => {
-    if (usr) {
-      setFormData({ ...usr, password: '' });
-    } else {
-      setFormData({ id: null, username: '', email: '', password: '', full_name: '', role: 'viewer', is_active: true });
-    }
-    setShowModal(true);
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    try {
-      if (formData.id) {
-        const payload = { ...formData };
-        delete payload.password; // Admin edits shouldn't blindly update password unless intended
-        await put(`/users/${formData.id}`, payload);
-        toast.success('User updated');
-      } else {
-        await post('/users', formData);
-        toast.success('User created');
+    let active = true;
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const res = await get('/users?page_size=100');
+        if (active) setUsers(res.data.data || res.data.items || (Array.isArray(res.data) ? res.data : []));
+      } catch (error) {
+        if (active) toast.error('Failed to load cached identities');
+      } finally {
+        if (active) setLoading(false);
       }
-      setShowModal(false);
-      fetchUsers();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to save user');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (deleteId === currentUser.id) {
-      toast.error("Cannot delete yourself!");
-      setDeleteId(null);
-      return;
-    }
-    try {
-      await del(`/users/${deleteId}`);
-      toast.success('User deleted');
-      fetchUsers();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to delete user');
-    } finally {
-      setDeleteId(null);
-    }
-  };
+    };
+    fetchUsers();
+    return () => { active = false; };
+  }, []);
 
   return (
     <div>
       <div className="bic-page-header">
-        <h1 className="bic-page-title">Users</h1>
-        <Button variant="primary" onClick={() => handleOpenModal()}>
-          <MdAdd className="bic-mr-1" /> Add User
-        </Button>
+        <div>
+          <p className="bic-page-kicker">ADMINISTRATION</p>
+          <h1 className="bic-page-title">Users</h1>
+          <p className="bic-page-subtitle">CentralAuth identities currently known to NMS.</p>
+        </div>
       </div>
 
+      <Alert variant="info" className="bic-mb-6">
+        Create users, change roles, and disable access in CentralAuth. NMS keeps this read-only cache for audit and operational references.
+      </Alert>
+
       <Card>
+        <Card.Header>
+          <h2 className="bic-section-title bic-mb-0">Identity directory</h2>
+          <span className="bic-text-secondary bic-text-sm">{users.length} cached identities</span>
+        </Card.Header>
         <Table responsive hover className="bic-mb-0">
           <thead>
             <tr>
@@ -95,91 +51,25 @@ export default function UsersPage() {
               <th>Full Name</th>
               <th>Role</th>
               <th>Status</th>
-              <th className="bic-text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" className="bic-empty">Loading...</td></tr>
+              <tr><td colSpan="5" className="bic-empty"><Spinner size="sm" /> Loading identities...</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan="6" className="bic-empty">No users found</td></tr>
-            ) : (
-              users.map(u => (
-                <tr key={u.id}>
-                  <td>{u.username}</td>
-                  <td>{u.email}</td>
-                  <td>{u.full_name}</td>
-                  <td><Badge bg="info">{u.role}</Badge></td>
-                  <td>
-                    {u.is_active ? <Badge bg="success">Active</Badge> : <Badge bg="info">Inactive</Badge>}
-                  </td>
-                  <td className="bic-text-right">
-                    <Button variant="secondary" size="sm" className="bic-mr-2" title="Edit user" onClick={() => handleOpenModal(u)}>
-                      <MdEdit />
-                    </Button>
-                    <Button 
-                      variant="danger" size="sm" title="Delete user"
-                      disabled={u.id === currentUser.id}
-                      onClick={() => setDeleteId(u.id)}
-                    >
-                      <MdDelete />
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
+              <tr><td colSpan="5" className="bic-empty">No identities have signed in to NMS yet.</td></tr>
+            ) : users.map(user => (
+              <tr key={user.id}>
+                <td className="bic-font-semibold">{user.username}</td>
+                <td>{user.email}</td>
+                <td>{user.full_name || '—'}</td>
+                <td><Badge bg="info">{user.role}</Badge></td>
+                <td>{user.is_active ? <Badge bg="success">Active</Badge> : <Badge bg="info">Inactive</Badge>}</td>
+              </tr>
+            ))}
           </tbody>
         </Table>
       </Card>
-
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Form onSubmit={handleSave}>
-          <Modal.Header closeButton>
-            <Modal.Title>{formData.id ? 'Edit User' : 'Add User'}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form.Group className="bic-mb-4">
-              <Form.Label>Username *</Form.Label>
-              <Form.Control required value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} disabled={!!formData.id} />
-            </Form.Group>
-            {!formData.id && (
-              <Form.Group className="bic-mb-4">
-                <Form.Label>Password *</Form.Label>
-                <Form.Control required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-              </Form.Group>
-            )}
-            <Form.Group className="bic-mb-4">
-              <Form.Label>Email *</Form.Label>
-              <Form.Control required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-            </Form.Group>
-            <Form.Group className="bic-mb-4">
-              <Form.Label>Full Name</Form.Label>
-              <Form.Control value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} />
-            </Form.Group>
-            <Form.Group className="bic-mb-4">
-              <Form.Label>Role</Form.Label>
-              <Form.Select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
-                {USER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="bic-mb-4">
-              <Form.Check type="checkbox" label="Active" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} />
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button variant="primary" type="submit">Save</Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
-
-      <ConfirmDialog
-        show={!!deleteId}
-        title="Delete User"
-        message="Are you sure you want to delete this user? This cannot be undone."
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteId(null)}
-      />
     </div>
   );
 }

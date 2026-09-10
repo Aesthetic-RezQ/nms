@@ -141,7 +141,7 @@ Pagination.Prev = props => <Button variant="secondary" size="sm" aria-label="Pre
 Pagination.Next = props => <Button variant="secondary" size="sm" aria-label="Next page" {...props}>Next</Button>;
 
 export function Stat({ label, value, meta, tone }) {
-  return <div className="bic-card bic-stat">
+  return <div className={classes('bic-card', 'bic-stat', tone && `bic-stat-${tone}`)}>
     <div className="bic-stat-label">{label}</div>
     <div className={classes('bic-stat-value', tone && `bic-text-${tone}`)}>{value}</div>
     {meta && <div className="bic-stat-meta">{meta}</div>}

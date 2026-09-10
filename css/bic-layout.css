@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   gap: var(--bic-space-3);
-  padding: 0 var(--bic-space-5);
+  padding: 0 var(--bic-space-6);
   border-bottom: 1px solid var(--bic-sidebar-border);
   font-weight: 700;
   letter-spacing: .2px;
@@ -49,8 +49,9 @@
   display: flex;
   align-items: center;
   gap: var(--bic-space-3);
-  padding: var(--bic-space-3);
-  margin-bottom: var(--bic-space-1);
+  padding: 9px var(--bic-space-3);
+  margin-bottom: 2px;
+  border-left: 3px solid transparent;
   border-radius: var(--bic-radius-md);
   color: var(--bic-sidebar-link);
   text-decoration: none;
@@ -60,6 +61,7 @@
 .bic-nav-link:hover,
 .bic-nav-link.is-active {
   background: var(--bic-bg-sidebar-hover);
+  border-left-color: var(--bic-primary);
   color: var(--bic-text-inverse);
   text-decoration: none;
 }
@@ -81,13 +83,14 @@
   padding: 0 var(--bic-space-6);
   background: var(--bic-topbar-surface);
   border-bottom: 1px solid var(--bic-border);
+  box-shadow: var(--bic-shadow-sm);
   backdrop-filter: blur(var(--bic-space-2));
 }
 
 .bic-content {
   width: min(100%, var(--bic-content-max));
   margin: 0 auto;
-  padding: var(--bic-space-6);
+  padding: var(--bic-space-6) var(--bic-space-8);
 }
 
 .bic-page-header {
@@ -102,10 +105,28 @@
   margin-bottom: var(--bic-space-1);
 }
 
+.bic-page-kicker {
+  margin: 0 0 var(--bic-space-2);
+  color: var(--bic-primary);
+  font-size: var(--bic-font-size-xs);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
 .bic-page-subtitle {
   margin: 0;
   color: var(--bic-text-secondary);
 }
+
+.bic-brand-copy { display: grid; gap: var(--bic-space-1); min-width: 0; }
+.bic-brand-name { font-size: var(--bic-font-size-md); letter-spacing: .04em; }
+.bic-brand-subtitle { color: var(--bic-sidebar-label); font-size: var(--bic-font-size-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bic-nav-link { position: relative; }
+.bic-nav-link.is-active::before { content: ""; position: absolute; inset: var(--bic-space-2) auto var(--bic-space-2) 0; width: var(--bic-space-1); border-radius: var(--bic-radius-pill); background: var(--bic-sidebar-active-indicator); }
+.bic-topbar-heading { display: grid; gap: var(--bic-space-1); min-width: 0; }
+.bic-topbar-eyebrow { color: var(--bic-topbar-eyebrow); font-size: var(--bic-font-size-xs); line-height: 1; letter-spacing: .06em; text-transform: uppercase; }
+.bic-topbar-label { line-height: 1.2; }
 
 .bic-grid {
   display: grid;

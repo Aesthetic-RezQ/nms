@@ -1,10 +1,10 @@
 :root {
   /* Brand */
-  --bic-primary: #0f4c81;
-  --bic-primary-hover: #0b3b65;
-  --bic-primary-soft: #eaf3fb;
-  --bic-secondary: #475569;
-  --bic-accent: #0ea5e9;
+  --bic-primary: #3b7ddd;
+  --bic-primary-hover: #326abc;
+  --bic-primary-soft: #eaf2fd;
+  --bic-secondary: #6c757d;
+  --bic-accent: #20c997;
 
   /* Status */
   --bic-success: #15803d;
@@ -17,21 +17,22 @@
   --bic-info-soft: #f0f9ff;
 
   /* Neutral surfaces */
-  --bic-bg-body: #f5f7fa;
+  --bic-bg-body: #f5f7fb;
   --bic-bg-surface: #ffffff;
-  --bic-bg-sidebar: #172033;
-  --bic-bg-sidebar-hover: #22304a;
+  --bic-bg-surface-muted: #f8fafc;
+  --bic-bg-sidebar: #293042;
+  --bic-bg-sidebar-hover: #3b465d;
   --bic-bg-muted: #f8fafc;
 
   /* Text */
-  --bic-text-primary: #1e293b;
-  --bic-text-secondary: #64748b;
-  --bic-text-muted: #94a3b8;
+  --bic-text-primary: #343a40;
+  --bic-text-secondary: #6c757d;
+  --bic-text-muted: #9b9b9b;
   --bic-text-inverse: #ffffff;
 
   /* Borders */
-  --bic-border: #e2e8f0;
-  --bic-border-strong: #cbd5e1;
+  --bic-border: #dee2e6;
+  --bic-border-strong: #ced4da;
 
   /* Typography */
   --bic-font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
@@ -54,22 +55,38 @@
   --bic-space-10: 40px;
 
   /* Shape */
-  --bic-radius-sm: 4px;
-  --bic-radius-md: 8px;
-  --bic-radius-lg: 12px;
+  --bic-radius-sm: 2px;
+  --bic-radius-md: 4px;
+  --bic-radius-lg: 6px;
   --bic-radius-pill: 999px;
 
   /* Shadows */
-  --bic-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --bic-shadow-md: 0 6px 20px rgba(15, 23, 42, 0.08);
+  --bic-shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, .075);
+  --bic-shadow-md: 0 .5rem 1rem rgba(0, 0, 0, .15);
 
   /* Layout */
   --bic-sidebar-width: 250px;
-  --bic-topbar-height: 64px;
+  --bic-topbar-height: 60px;
   --bic-content-max: 1600px;
+  --bic-table-row-height: 48px;
 
   /* Motion */
   --bic-transition: 160ms ease;
+
+  --bic-color-primary: var(--bic-primary);
+  --bic-color-primary-hover: var(--bic-primary-hover);
+  --bic-color-background: var(--bic-bg-body);
+  --bic-color-surface: var(--bic-bg-surface);
+  --bic-color-surface-muted: var(--bic-bg-surface-muted);
+  --bic-color-text-primary: var(--bic-text-primary);
+  --bic-color-text-secondary: var(--bic-text-secondary);
+  --bic-color-text-muted: var(--bic-text-muted);
+  --bic-color-border: var(--bic-border);
+  --bic-color-border-strong: var(--bic-border-strong);
+  --bic-color-success: var(--bic-success);
+  --bic-color-warning: var(--bic-warning);
+  --bic-color-danger: var(--bic-danger);
+  --bic-color-info: var(--bic-info);
 
   /* Shared component dimensions and states */
   --bic-control-height: 40px;
@@ -95,9 +112,11 @@
   --bic-backdrop: rgba(15, 23, 42, .55);
   --bic-sidebar-border: rgba(255, 255, 255, .08);
   --bic-sidebar-mark: rgba(255, 255, 255, .12);
+  --bic-sidebar-active-indicator: var(--bic-primary);
   --bic-sidebar-label: rgba(255, 255, 255, .65);
   --bic-sidebar-link: rgba(255, 255, 255, .82);
   --bic-topbar-surface: rgba(255, 255, 255, .96);
+  --bic-topbar-eyebrow: var(--bic-text-muted);
   --bic-disabled-opacity: .55;
   --bic-spinner-duration: 800ms;
   --bic-z-topbar: 900;

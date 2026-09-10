@@ -5,16 +5,18 @@
   justify-content: center;
   gap: var(--bic-space-2);
   min-height: var(--bic-control-height);
-  padding: var(--bic-space-2) var(--bic-space-4);
+  padding: 7px var(--bic-space-3);
   border: 1px solid transparent;
   border-radius: var(--bic-radius-md);
   cursor: pointer;
+  font-size: var(--bic-font-size-sm);
   font-weight: 600;
   text-decoration: none;
   transition: all var(--bic-transition);
 }
 
 .bic-btn:hover { text-decoration: none; }
+.bic-btn:focus-visible { box-shadow: var(--bic-focus-ring); }
 
 .bic-btn-primary {
   background: var(--bic-primary);
@@ -44,7 +46,7 @@
 .bic-card {
   background: var(--bic-bg-surface);
   border: 1px solid var(--bic-border);
-  border-radius: var(--bic-radius-lg);
+  border-radius: var(--bic-radius-md);
   box-shadow: var(--bic-shadow-sm);
 }
 
@@ -66,6 +68,10 @@
 .bic-stat {
   padding: var(--bic-space-5);
 }
+.bic-stat-success { border-top: var(--bic-space-1) solid var(--bic-success); }
+.bic-stat-warning { border-top: var(--bic-space-1) solid var(--bic-warning); }
+.bic-stat-danger { border-top: var(--bic-space-1) solid var(--bic-danger); }
+.bic-stat-info { border-top: var(--bic-space-1) solid var(--bic-info); }
 
 .bic-stat-label {
   color: var(--bic-text-secondary);
@@ -149,7 +155,7 @@
 }
 
 .bic-table th {
-  background: var(--bic-bg-muted);
+  background: var(--bic-bg-surface);
   color: var(--bic-text-secondary);
   font-size: var(--bic-font-size-xs);
   text-transform: uppercase;
@@ -165,7 +171,7 @@
   display: inline-flex;
   align-items: center;
   padding: var(--bic-space-1) var(--bic-space-2);
-  border-radius: var(--bic-radius-pill);
+  border-radius: var(--bic-radius-sm);
   font-size: var(--bic-font-size-xs);
   font-weight: 700;
 }
@@ -178,7 +184,7 @@
 /* Alerts */
 .bic-alert {
   padding: var(--bic-space-3) var(--bic-space-4);
-  border: 1px solid var(--bic-border);
+  border: 0;
   border-radius: var(--bic-radius-md);
   margin-bottom: var(--bic-space-4);
 }
@@ -207,7 +213,7 @@
   max-height: 90vh;
   overflow: auto;
   background: var(--bic-bg-surface);
-  border-radius: var(--bic-radius-lg);
+  border-radius: var(--bic-radius-md);
   box-shadow: var(--bic-shadow-md);
 }
 
@@ -245,6 +251,20 @@
   text-align: center;
   color: var(--bic-text-secondary);
 }
+
+.bic-icon-action {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--bic-border);
+  border-radius: var(--bic-radius-md);
+  background: var(--bic-bg-surface);
+  color: var(--bic-text-secondary);
+}
+.bic-icon-action:hover { color: var(--bic-primary); background: var(--bic-primary-soft); }
+.bic-icon-action-danger:hover { color: var(--bic-danger); background: var(--bic-danger-soft); }
 
 /* Shared React component states */
 .bic-btn:disabled { opacity: var(--bic-disabled-opacity); cursor: not-allowed; }
@@ -324,6 +344,9 @@ dialog.bic-modal::backdrop { background: var(--bic-backdrop); }
 .bic-dropdown > summary { list-style: none; }
 .bic-dropdown > summary::-webkit-details-marker { display: none; }
 .bic-dropdown-menu { position: absolute; top: calc(100% + var(--bic-space-2)); right: 0; min-width: var(--bic-scroll-height); padding: var(--bic-space-4); border: 1px solid var(--bic-border); border-radius: var(--bic-radius-md); box-shadow: var(--bic-shadow-md); background: var(--bic-bg-surface); }
+.bic-dropdown-name { margin: 0; color: var(--bic-text-primary); font-weight: 700; }
+.bic-dropdown-menu .bic-text-secondary { margin: 0 0 var(--bic-space-2); }
+.bic-dropdown-menu .bic-btn { margin-top: var(--bic-space-2); }
 .bic-skip-link { position: fixed; top: var(--bic-space-2); left: var(--bic-space-2); z-index: var(--bic-z-notifications); transform: translateY(-200%); }
 .bic-skip-link:focus { transform: translateY(0); }
 @media (max-width: 768px) {
