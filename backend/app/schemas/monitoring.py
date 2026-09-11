@@ -21,6 +21,10 @@ class DeviceLatencyHistory(BaseModel):
     latencies: List[Optional[float]]
     statuses: List[str]
 
+class DeviceUptimeHistory(BaseModel):
+    timestamps: List[datetime]
+    uptimes: List[float]
+
 class DeviceMetricsSummary(BaseModel):
     current_status: str
     current_latency: Optional[float] = None

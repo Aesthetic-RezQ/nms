@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from app.database import get_db
 from app.models.device import Device
 from app.models.monitoring_result import MonitoringResult
-from app.schemas.monitoring import MonitoringResultRead, DeviceMetricsSummary, DeviceLatencyHistory
+from app.schemas.monitoring import MonitoringResultRead, DeviceMetricsSummary, DeviceLatencyHistory, DeviceUptimeHistory
 from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/api/devices", tags=["Device Monitoring History"])
@@ -119,6 +119,54 @@ async def get_device_latency_history(
         latencies=latencies,
         statuses=statuses,
     )
+
+@router.get("/{device_id}/uptime-history", response_model=DeviceUptimeHistory)
+async def get_device_uptime_history(
+    device_id: UUID,
+    hours: int = Query(default=24, ge=1, le=168),
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get uptime percentages using the same time buckets as latency history."""
+    device_res = await db.execute(select(Device).where(Device.id == device_id))
+    device = device_res.scalars().first()
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    if hours <= 1:
+        query = (
+            select(MonitoringResult.checked_at.label("ts"), MonitoringResult.status)
+            .where(MonitoringResult.device_id == device_id)
+            .where(MonitoringResult.checked_at >= since)
+            .order_by(MonitoringResult.checked_at.asc())
+        )
+        result = await db.execute(query)
+        rows = result.all()
+        timestamps = [row.ts for row in rows]
+        uptimes = [100.0 if row.status == "UP" else 0.0 for row in rows]
+    else:
+        if hours <= 24:
+            bucket_expression = "date_trunc('hour', checked_at) + (floor(extract(minute from checked_at) / 5) * 5) * interval '1 minute'"
+        else:
+            bucket_expression = "date_trunc('hour', checked_at)"
+        sql = text(f"""
+            SELECT
+                {bucket_expression} AS bucket,
+                ROUND((COUNT(*) FILTER (WHERE status = 'UP') * 100.0 / COUNT(*))::numeric, 2) AS uptime
+            FROM monitoring_results
+            WHERE device_id = :device_id
+              AND checked_at >= :since
+            GROUP BY bucket
+            ORDER BY bucket ASC
+        """)
+        result = await db.execute(sql, {"device_id": str(device_id), "since": since})
+        rows = result.all()
+        timestamps = [row.bucket for row in rows]
+        uptimes = [float(row.uptime) for row in rows]
+
+    return DeviceUptimeHistory(timestamps=timestamps, uptimes=uptimes)
 
 @router.get("/{device_id}/metrics", response_model=DeviceMetricsSummary)
 async def get_device_metrics(

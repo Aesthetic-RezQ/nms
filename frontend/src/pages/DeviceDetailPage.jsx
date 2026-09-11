@@ -36,6 +36,7 @@ export default function DeviceDetailPage() {
   const [metrics, setMetrics] = useState(null);
   const [history, setHistory] = useState([]);
   const [incidents, setIncidents] = useState([]);
+  const [chartMetric, setChartMetric] = useState('latency');
   const [timeRange, setTimeRange] = useState(24); // hours: 1, 24, 168 (7 days)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,21 +52,27 @@ export default function DeviceDetailPage() {
         get(`/devices/${id}/incidents?page=1&page_size=10`),
       ]);
 
-      // For 1h use raw history; for 24h/7d use aggregated latency-history
+      // For 1h use raw history; for 24h/7d use server-side time buckets.
       let histData;
-      if (timeRange <= 1) {
+      if (chartMetric === 'latency' && timeRange <= 1) {
         const histRes = await get(`/devices/${id}/history?hours=${timeRange}&limit=500`);
         histData = [...histRes.data].reverse().map(item => ({
           timestamp: item.checked_at,
           latency: item.is_successful && item.status !== 'DOWN' ? item.latency : null,
           status: item.status,
         }));
-      } else {
+      } else if (chartMetric === 'latency') {
         const latRes = await get(`/devices/${id}/latency-history?hours=${timeRange}`);
         histData = latRes.data.timestamps.map((ts, i) => ({
           timestamp: ts,
           latency: latRes.data.latencies[i],
           status: latRes.data.statuses[i],
+        }));
+      } else {
+        const uptimeRes = await get(`/devices/${id}/uptime-history?hours=${timeRange}`);
+        histData = uptimeRes.data.timestamps.map((ts, i) => ({
+          timestamp: ts,
+          uptime: uptimeRes.data.uptimes[i],
         }));
       }
 
@@ -85,7 +92,7 @@ export default function DeviceDetailPage() {
     fetchDeviceData();
     const interval = setInterval(fetchDeviceData, 15000);
     return () => clearInterval(interval);
-  }, [id, timeRange]);
+  }, [id, timeRange, chartMetric]);
 
   if (loading && !device) {
     return (
@@ -112,15 +119,18 @@ export default function DeviceDetailPage() {
   const styles = getComputedStyle(document.documentElement);
   const token = name => styles.getPropertyValue('--bic-' + name).trim();
   // Chart dataset preparation
+  const isUptimeChart = chartMetric === 'uptime';
+  const chartTitle = isUptimeChart ? 'Uptime History' : 'Latency History';
   const chartLabels = history.map(item => dayjs(item.timestamp).format(timeRange <= 24 ? 'HH:mm' : 'MMM DD HH:mm'));
+  const chartColor = token(isUptimeChart ? 'success' : 'primary');
   const chartData = {
     labels: chartLabels,
     datasets: [
       {
-        label: 'Latency (ms)',
-        data: history.map(item => item.latency !== null ? item.latency : null),
-        borderColor: token('primary'),
-        backgroundColor: token('primary-soft'),
+        label: isUptimeChart ? 'Uptime (%)' : 'Latency (ms)',
+        data: history.map(item => isUptimeChart ? item.uptime : item.latency),
+        borderColor: chartColor,
+        backgroundColor: token(isUptimeChart ? 'success-soft' : 'primary-soft'),
         fill: true,
         tension: 0.3,
         spanGaps: false,
@@ -142,15 +152,18 @@ export default function DeviceDetailPage() {
         titleColor: token('text-inverse'),
         bodyColor: token('text-inverse'),
         callbacks: {
-          label: (context) => `Latency: ${context.parsed.y !== null ? context.parsed.y + ' ms' : 'Offline / Timeout'}`
+          label: (context) => isUptimeChart
+            ? `Uptime: ${context.parsed.y !== null ? context.parsed.y + '%' : 'No data'}`
+            : `Latency: ${context.parsed.y !== null ? context.parsed.y + ' ms' : 'Offline / Timeout'}`
         }
       }
     },
     scales: {
       y: {
         beginAtZero: true,
+        max: isUptimeChart ? 100 : undefined,
         ticks: { color: token('text-secondary') },
-        title: { display: true, text: 'Latency (ms)', color: token('text-secondary') },
+        title: { display: true, text: isUptimeChart ? 'Uptime (%)' : 'Latency (ms)', color: token('text-secondary') },
         grid: { color: token('border') }
       },
       x: {
@@ -192,43 +205,61 @@ export default function DeviceDetailPage() {
         <Stat label="Last Seen" value={device.last_seen ? dayjs(device.last_seen).format('HH:mm:ss') : 'Never'} meta={device.last_seen ? dayjs(device.last_seen).format('YYYY-MM-DD') : undefined} />
       </div>
 
-      {/* Latency History Chart */}
+      {/* Latency and uptime history chart */}
       <Card className="bic-mb-6">
         <Card.Header>
           <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
-            <MdSpeed /> Latency History
+            {isUptimeChart ? <MdCheckCircle /> : <MdSpeed />} {chartTitle}
           </h2>
-          <ButtonGroup size="sm">
-            <Button
-              variant={timeRange === 1 ? 'primary' : 'secondary'}
-              aria-pressed={timeRange === 1}
-              onClick={() => setTimeRange(1)}
-            >
-              1 Hour
-            </Button>
-            <Button
-              variant={timeRange === 24 ? 'primary' : 'secondary'}
-              aria-pressed={timeRange === 24}
-              onClick={() => setTimeRange(24)}
-            >
-              24 Hours
-            </Button>
-            <Button
-              variant={timeRange === 168 ? 'primary' : 'secondary'}
-              aria-pressed={timeRange === 168}
-              onClick={() => setTimeRange(168)}
-            >
-              7 Days
-            </Button>
-          </ButtonGroup>
+          <div className="bic-flex bic-items-center bic-gap-3">
+            <ButtonGroup size="sm" aria-label="History metric">
+              <Button
+                variant={!isUptimeChart ? 'primary' : 'secondary'}
+                aria-pressed={!isUptimeChart}
+                onClick={() => setChartMetric('latency')}
+              >
+                Latency
+              </Button>
+              <Button
+                variant={isUptimeChart ? 'primary' : 'secondary'}
+                aria-pressed={isUptimeChart}
+                onClick={() => setChartMetric('uptime')}
+              >
+                Uptime
+              </Button>
+            </ButtonGroup>
+            <ButtonGroup size="sm" aria-label="History time range">
+              <Button
+                variant={timeRange === 1 ? 'primary' : 'secondary'}
+                aria-pressed={timeRange === 1}
+                onClick={() => setTimeRange(1)}
+              >
+                1 Hour
+              </Button>
+              <Button
+                variant={timeRange === 24 ? 'primary' : 'secondary'}
+                aria-pressed={timeRange === 24}
+                onClick={() => setTimeRange(24)}
+              >
+                24 Hours
+              </Button>
+              <Button
+                variant={timeRange === 168 ? 'primary' : 'secondary'}
+                aria-pressed={timeRange === 168}
+                onClick={() => setTimeRange(168)}
+              >
+                7 Days
+              </Button>
+            </ButtonGroup>
+          </div>
         </Card.Header>
         <Card.Body>
           <div className="bic-chart">
             {history.length > 0 ? (
-              <Line data={chartData} options={chartOptions} role="img" aria-label="Device latency over the selected time range, in milliseconds" />
+              <Line data={chartData} options={chartOptions} role="img" aria-label={`Device ${isUptimeChart ? 'uptime' : 'latency'} over the selected time range`} />
             ) : (
               <div className="bic-flex bic-justify-center bic-items-center bic-h-full bic-text-secondary">
-                No latency history recorded yet for this time window.
+                No {isUptimeChart ? 'uptime' : 'latency'} history recorded yet for this time window.
               </div>
             )}
           </div>
