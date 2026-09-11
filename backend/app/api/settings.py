@@ -28,17 +28,28 @@ async def update_settings(data: SettingBulkUpdate, db: AsyncSession = Depends(ge
             old_value = setting.value
             setting.value = setting_update.value
             setting.updated_by = current_user.id
-            
-            await AuditService.create_log(
-                db, 
-                user_id=current_user.id, 
-                username=current_user.username, 
-                action="SETTING_CHANGED", 
-                object_type="setting", 
-                object_id=setting_update.key,
-                old_value={"value": old_value},
-                new_value={"value": setting_update.value}
+        else:
+            # Keep settings extensible so newly introduced configuration keys
+            # are not silently dropped on older installations.
+            old_value = None
+            setting = SystemSetting(
+                key=setting_update.key,
+                value=setting_update.value,
+                data_type="string",
+                updated_by=current_user.id,
             )
+            db.add(setting)
+
+        await AuditService.create_log(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            action="SETTING_CHANGED",
+            object_type="setting",
+            object_id=setting_update.key,
+            old_value={"value": old_value},
+            new_value={"value": setting_update.value}
+        )
             
     await db.commit()
     return MessageResponse(message="Settings updated successfully")

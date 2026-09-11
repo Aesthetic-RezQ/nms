@@ -109,6 +109,16 @@ async def startup_event():
                 ("app_timezone", "Asia/Jakarta", "string"),
                 ("data_retention_raw_days", "7", "integer"),
                 ("data_retention_aggregate_days", "30", "integer"),
+                ("telegram_enabled", "false", "boolean"),
+                ("telegram_bot_token", "", "secret"),
+                ("telegram_chat_id", "", "string"),
+                ("smtp_enabled", "false", "boolean"),
+                ("smtp_host", "", "string"),
+                ("smtp_port", "587", "integer"),
+                ("smtp_user", "", "string"),
+                ("smtp_password", "", "secret"),
+                ("smtp_from_email", "nms-alert@local", "string"),
+                ("smtp_to_emails", "", "string"),
             ]:
                 res = await db.execute(select(SystemSetting).where(SystemSetting.key == k))
                 if not res.scalars().first():
