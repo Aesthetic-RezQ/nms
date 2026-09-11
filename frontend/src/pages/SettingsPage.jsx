@@ -83,17 +83,21 @@ export default function SettingsPage() {
     }));
   };
 
+  const persistSettings = async () => {
+    const payload = {
+      settings: Object.entries(settings).map(([key, value]) => ({
+        key,
+        value: String(value)
+      }))
+    };
+    await put('/settings', payload);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = {
-        settings: Object.entries(settings).map(([key, value]) => ({
-          key,
-          value: String(value)
-        }))
-      };
-      await put('/settings', payload);
+      await persistSettings();
       toast.success('System settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings', error);
@@ -104,8 +108,13 @@ export default function SettingsPage() {
   };
 
   const handleTestTelegram = async () => {
+    if (!settings.telegram_bot_token || !settings.telegram_chat_id) {
+      toast.error('Telegram bot token and chat ID must be configured.');
+      return;
+    }
     setTestingTg(true);
     try {
+      await persistSettings();
       const res = await post('/notifications/test', {
         channel: 'TELEGRAM',
         custom_message: 'Manual test from NMS Settings interface'
@@ -120,8 +129,14 @@ export default function SettingsPage() {
   };
 
   const handleTestEmail = async () => {
+    const recipient = settings.smtp_to_emails.split(',').map(value => value.trim()).find(Boolean);
+    if (!settings.smtp_host || !recipient) {
+      toast.error('SMTP host and recipient email address must be configured.');
+      return;
+    }
     setTestingSmtp(true);
     try {
+      await persistSettings();
       const res = await post('/notifications/test', {
         channel: 'EMAIL',
         custom_message: 'Manual SMTP email test from NMS Settings interface'
@@ -293,7 +308,7 @@ export default function SettingsPage() {
                   variant="secondary"
                   size="sm"
                   onClick={handleTestTelegram}
-                  disabled={testingTg || settings.telegram_enabled !== 'true' || !settings.telegram_bot_token}
+                  disabled={testingTg || settings.telegram_enabled !== 'true' || !settings.telegram_bot_token || !settings.telegram_chat_id}
                 >
                   <MdSend className="bic-mr-1" />
                   {testingTg ? 'Testing...' : 'Send Test Telegram Alert'}
@@ -391,7 +406,7 @@ export default function SettingsPage() {
                   variant="secondary"
                   size="sm"
                   onClick={handleTestEmail}
-                  disabled={testingSmtp || settings.smtp_enabled !== 'true' || !settings.smtp_host}
+                  disabled={testingSmtp || settings.smtp_enabled !== 'true' || !settings.smtp_host || !settings.smtp_to_emails.trim()}
                 >
                   <MdSend className="bic-mr-1" />
                   {testingSmtp ? 'Sending...' : 'Send Test Email'}
