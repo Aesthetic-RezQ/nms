@@ -64,6 +64,7 @@ async def get_device_latency_history(
                 MonitoringResult.checked_at.label("ts"),
                 MonitoringResult.latency,
                 MonitoringResult.status,
+                MonitoringResult.is_successful,
             )
             .where(MonitoringResult.device_id == device_id)
             .where(MonitoringResult.checked_at >= since)
@@ -72,7 +73,12 @@ async def get_device_latency_history(
         result = await db.execute(query)
         rows = result.all()
         timestamps = [row.ts for row in rows]
-        latencies = [row.latency for row in rows]
+        # Failed checks are outage signals, not latency measurements. Keep
+        # their status in the response while leaving the latency point empty.
+        latencies = [
+            row.latency if row.is_successful and row.status != "DOWN" else None
+            for row in rows
+        ]
         statuses = [row.status for row in rows]
     else:
         # Aggregated — use date_trunc to bucket by 5min (24h) or 1h (7d)
@@ -82,7 +88,7 @@ async def get_device_latency_history(
                     date_trunc('hour', checked_at) +
                     (floor(extract(minute from checked_at) / 5) * 5) * interval '1 minute'
                         AS bucket,
-                    ROUND(AVG(latency)::numeric, 2) AS avg_latency,
+                    ROUND(AVG(latency) FILTER (WHERE is_successful = TRUE AND status <> 'DOWN')::numeric, 2) AS avg_latency,
                     MODE() WITHIN GROUP (ORDER BY status) AS status
                 FROM monitoring_results
                 WHERE device_id = :device_id
@@ -94,7 +100,7 @@ async def get_device_latency_history(
             sql = text("""
                 SELECT
                     date_trunc('hour', checked_at) AS bucket,
-                    ROUND(AVG(latency)::numeric, 2) AS avg_latency,
+                    ROUND(AVG(latency) FILTER (WHERE is_successful = TRUE AND status <> 'DOWN')::numeric, 2) AS avg_latency,
                     MODE() WITHIN GROUP (ORDER BY status) AS status
                 FROM monitoring_results
                 WHERE device_id = :device_id
@@ -132,9 +138,18 @@ async def get_device_metrics(
     stats_query = select(
         func.count(MonitoringResult.id).label("total_checks"),
         func.count(MonitoringResult.id).filter(MonitoringResult.status == "UP").label("up_checks"),
-        func.avg(MonitoringResult.latency).filter(MonitoringResult.is_successful == True).label("avg_latency"),
-        func.min(MonitoringResult.latency).filter(MonitoringResult.is_successful == True).label("min_latency"),
-        func.max(MonitoringResult.latency).filter(MonitoringResult.is_successful == True).label("max_latency"),
+        func.avg(MonitoringResult.latency).filter(
+            MonitoringResult.is_successful == True,
+            MonitoringResult.status != "DOWN",
+        ).label("avg_latency"),
+        func.min(MonitoringResult.latency).filter(
+            MonitoringResult.is_successful == True,
+            MonitoringResult.status != "DOWN",
+        ).label("min_latency"),
+        func.max(MonitoringResult.latency).filter(
+            MonitoringResult.is_successful == True,
+            MonitoringResult.status != "DOWN",
+        ).label("max_latency"),
     ).where(
         MonitoringResult.device_id == device_id,
         MonitoringResult.checked_at >= since

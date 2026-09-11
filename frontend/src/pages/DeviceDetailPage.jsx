@@ -57,7 +57,7 @@ export default function DeviceDetailPage() {
         const histRes = await get(`/devices/${id}/history?hours=${timeRange}&limit=500`);
         histData = [...histRes.data].reverse().map(item => ({
           timestamp: item.checked_at,
-          latency: item.latency,
+          latency: item.is_successful && item.status !== 'DOWN' ? item.latency : null,
           status: item.status,
         }));
       } else {
@@ -123,6 +123,7 @@ export default function DeviceDetailPage() {
         backgroundColor: token('primary-soft'),
         fill: true,
         tension: 0.3,
+        spanGaps: false,
         pointRadius: history.length > 50 ? 0 : 3,
         pointHoverRadius: 5
       }
