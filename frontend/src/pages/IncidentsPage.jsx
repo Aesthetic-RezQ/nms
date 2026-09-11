@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, Table, Form, Row, Col, Button, Badge, Modal, Pagination, Spinner, Alert } from '../components/bic';
-import { MdWarning, MdCheck, MdNoteAdd, MdRefresh, MdFilterList } from 'react-icons/md';
+import { MdWarning, MdCheck, MdNoteAdd, MdRefresh, MdFilterList, MdEmail } from 'react-icons/md';
 import { get, post } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { toast } from '../components/bic/Notifications';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import dayjs from 'dayjs';
 
 export default function IncidentsPage() {
@@ -27,6 +28,10 @@ export default function IncidentsPage() {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteContent, setNoteContent] = useState('');
   const [noteSubmitting, setNoteSubmitting] = useState(false);
+
+  // Manual incident email state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
 
   const fetchIncidents = async () => {
     try {
@@ -97,6 +102,25 @@ export default function IncidentsPage() {
       toast.error(err.response?.data?.detail || "Failed to add note");
     } finally {
       setNoteSubmitting(false);
+    }
+  };
+
+  const handleOpenEmail = (incident) => {
+    setSelectedIncident(incident);
+    setShowEmailModal(true);
+  };
+
+  const handleConfirmEmail = async () => {
+    if (!selectedIncident) return;
+    try {
+      setEmailSubmitting(true);
+      const res = await post(`/incidents/${selectedIncident.id}/email`);
+      toast.success(res.data.message || 'Incident email sent successfully');
+      setShowEmailModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send incident email');
+    } finally {
+      setEmailSubmitting(false);
     }
   };
 
@@ -234,6 +258,14 @@ export default function IncidentsPage() {
                           >
                             <MdNoteAdd /> Note
                           </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleOpenEmail(inc)}
+                            title="Send Email Alert"
+                          >
+                            <MdEmail /> Email
+                          </Button>
                         </div>
                       </td>
                     )}
@@ -331,6 +363,17 @@ export default function IncidentsPage() {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      <ConfirmDialog
+        show={showEmailModal}
+        title="Send Incident Email"
+        message={`Send the configured SMTP alert to the recipients for ${selectedIncident?.device_name || 'this incident'}?`}
+        onCancel={() => setShowEmailModal(false)}
+        onConfirm={handleConfirmEmail}
+        variant="primary"
+        confirmLabel={emailSubmitting ? 'Sending...' : 'Send Email'}
+        confirmDisabled={emailSubmitting}
+      />
     </div>
   );
 }

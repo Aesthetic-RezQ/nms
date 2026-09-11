@@ -13,6 +13,7 @@ from app.models.user import User
 from app.schemas.incident import IncidentListFilter
 from app.core.exceptions import NotFoundException, ValidationException
 from app.services.audit_service import AuditService
+from app.core.time import format_app_datetime
 
 def format_duration(seconds: Optional[int]) -> Optional[str]:
     if seconds is None:
@@ -186,9 +187,9 @@ class IncidentService:
         
         if notes:
             if incident.notes:
-                incident.notes += f"\n[{now.strftime('%Y-%m-%d %H:%M:%S UTC')}] {username}: {notes}"
+                incident.notes += f"\n[{format_app_datetime(now)}] {username}: {notes}"
             else:
-                incident.notes = f"[{now.strftime('%Y-%m-%d %H:%M:%S UTC')}] {username}: {notes}"
+                incident.notes = f"[{format_app_datetime(now)}] {username}: {notes}"
 
         await db.commit()
         await AuditService.create_log(
@@ -217,7 +218,7 @@ class IncidentService:
             raise NotFoundException("Incident not found")
 
         now = datetime.now(timezone.utc)
-        formatted_note = f"[{now.strftime('%Y-%m-%d %H:%M:%S UTC')}] {username}: {notes}"
+        formatted_note = f"[{format_app_datetime(now)}] {username}: {notes}"
         if incident.notes:
             incident.notes += f"\n{formatted_note}"
         else:

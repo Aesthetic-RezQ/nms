@@ -10,6 +10,7 @@ from app.models.notification_log import NotificationLog
 from app.schemas.notification import NotificationLogRead, TestNotificationRequest, NotificationTestResponse
 from app.services.notification_service import NotificationService
 from app.api.deps import require_admin, get_current_user
+from app.core.time import format_app_datetime
 
 router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
 
@@ -49,7 +50,7 @@ async def test_notification(
     Test sending a notification via Telegram or Email SMTP (Admin only).
     """
     settings = await NotificationService.get_settings_map(db)
-    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    now_str = format_app_datetime(datetime.now(timezone.utc))
     custom_msg = request.custom_message or "This is a test notification from the LAN Network Monitoring System."
     
     test_body = (

@@ -13,6 +13,7 @@ from sqlalchemy import select
 from app.models.notification_log import NotificationLog
 from app.models.system_setting import SystemSetting
 from app.services.incident_service import format_duration
+from app.core.time import format_app_datetime
 
 logger = logging.getLogger("nms.notifications")
 
@@ -26,7 +27,7 @@ class NotificationService:
     @staticmethod
     def format_down_message(device_dict: dict, incident_dict: dict) -> str:
         down_since = incident_dict.get("down_since")
-        down_str = down_since.strftime("%Y-%m-%d %H:%M:%S UTC") if isinstance(down_since, datetime) else str(down_since or "Now")
+        down_str = format_app_datetime(down_since) if isinstance(down_since, datetime) else str(down_since or "Now")
         
         return (
             f"🚨 NETWORK ALERT: Device DOWN\n\n"
@@ -42,7 +43,7 @@ class NotificationService:
     @staticmethod
     def format_recovery_message(device_dict: dict, incident_dict: dict) -> str:
         rec_at = incident_dict.get("recovered_at")
-        rec_str = rec_at.strftime("%Y-%m-%d %H:%M:%S UTC") if isinstance(rec_at, datetime) else str(rec_at or "Now")
+        rec_str = format_app_datetime(rec_at) if isinstance(rec_at, datetime) else str(rec_at or "Now")
         duration_sec = incident_dict.get("duration_seconds")
         duration_str = format_duration(duration_sec) or "0s"
 

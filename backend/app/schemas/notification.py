@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
 
@@ -29,3 +29,10 @@ class NotificationTestResponse(BaseModel):
     channel: str
     message: str
     recipient: str
+
+class IncidentEmailResponse(BaseModel):
+    success: bool
+    incident_id: UUID
+    sent_to: List[str] = []
+    failed: List[str] = []
+    message: str

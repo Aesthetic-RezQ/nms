@@ -22,7 +22,7 @@ def test_down_notification_formatting():
     assert "172.16.10.10" in msg
     assert "Building A" in msg
     assert "STATUS: DOWN" in msg.upper()
-    assert "2026-08-30 10:15:23 UTC" in msg
+    assert "2026-08-30 17:15:23 Asia/Jakarta" in msg
 
 def test_recovery_notification_formatting():
     device = {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button } from '../bic';
 
-export default function ConfirmDialog({ show, title, message, onConfirm, onCancel, variant = 'danger' }) {
+export default function ConfirmDialog({ show, title, message, onConfirm, onCancel, variant = 'danger', confirmLabel = 'Confirm', confirmDisabled = false }) {
   return (
     <Modal show={show} onHide={onCancel} centered>
       <Modal.Header closeButton>
@@ -14,8 +14,8 @@ export default function ConfirmDialog({ show, title, message, onConfirm, onCance
         <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button variant={variant} onClick={onConfirm}>
-          Confirm
+        <Button variant={variant} onClick={onConfirm} disabled={confirmDisabled}>
+          {confirmLabel}
         </Button>
       </Modal.Footer>
     </Modal>
