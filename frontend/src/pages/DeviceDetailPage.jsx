@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Card, Row, Col, Button, Table, ButtonGroup, Spinner, Alert, Badge, Stat } from '../components/bic';
+import { Card, Row, Col, Table, Spinner, Alert, Badge, Stat } from '../components/bic';
 import { MdArrowBack, MdEdit, MdWarning, MdCheckCircle, MdSpeed, MdAccessTime, MdInfo } from 'react-icons/md';
 import { get } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
@@ -212,45 +212,25 @@ export default function DeviceDetailPage() {
             {isUptimeChart ? <MdCheckCircle /> : <MdSpeed />} {chartTitle}
           </h2>
           <div className="bic-flex bic-items-center bic-gap-3">
-            <ButtonGroup size="sm" aria-label="History metric">
-              <Button
-                variant={!isUptimeChart ? 'primary' : 'secondary'}
-                aria-pressed={!isUptimeChart}
-                onClick={() => setChartMetric('latency')}
-              >
-                Latency
-              </Button>
-              <Button
-                variant={isUptimeChart ? 'primary' : 'secondary'}
-                aria-pressed={isUptimeChart}
-                onClick={() => setChartMetric('uptime')}
-              >
-                Uptime
-              </Button>
-            </ButtonGroup>
-            <ButtonGroup size="sm" aria-label="History time range">
-              <Button
-                variant={timeRange === 1 ? 'primary' : 'secondary'}
-                aria-pressed={timeRange === 1}
-                onClick={() => setTimeRange(1)}
-              >
-                1 Hour
-              </Button>
-              <Button
-                variant={timeRange === 24 ? 'primary' : 'secondary'}
-                aria-pressed={timeRange === 24}
-                onClick={() => setTimeRange(24)}
-              >
-                24 Hours
-              </Button>
-              <Button
-                variant={timeRange === 168 ? 'primary' : 'secondary'}
-                aria-pressed={timeRange === 168}
-                onClick={() => setTimeRange(168)}
-              >
-                7 Days
-              </Button>
-            </ButtonGroup>
+            <select
+              className="bic-btn bic-btn-secondary bic-btn-sm"
+              aria-label="History metric"
+              value={chartMetric}
+              onChange={event => setChartMetric(event.target.value)}
+            >
+              <option value="latency">Latency</option>
+              <option value="uptime">Uptime</option>
+            </select>
+            <select
+              className="bic-btn bic-btn-secondary bic-btn-sm"
+              aria-label="History time range"
+              value={timeRange}
+              onChange={event => setTimeRange(Number(event.target.value))}
+            >
+              <option value={1}>1 Hour</option>
+              <option value={24}>24 Hours</option>
+              <option value={168}>7 Days</option>
+            </select>
           </div>
         </Card.Header>
         <Card.Body>
