@@ -6,7 +6,6 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from uuid import UUID
-import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -58,23 +57,6 @@ class NotificationService:
         )
 
     @staticmethod
-    async def send_telegram(bot_token: str, chat_id: str, message: str) -> tuple[bool, Optional[str]]:
-        """Send message via Telegram Bot API using httpx."""
-        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        payload = {
-            "chat_id": chat_id,
-            "text": message
-        }
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.post(url, json=payload)
-                if resp.status_code == 200:
-                    return True, None
-                else:
-                    return False, f"Telegram API error ({resp.status_code}): {resp.text}"
-        except Exception as e:
-            return False, f"Telegram connection error: {str(e)}"
-
     @staticmethod
     def _send_smtp_sync(
         host: str,
@@ -84,20 +66,26 @@ class NotificationService:
         from_email: str,
         to_email: str,
         subject: str,
-        body: str
+        body: str,
+        encryption: str = "TLS",
+        sender_name: str = "NMS",
+        reply_to: Optional[str] = None,
     ) -> tuple[bool, Optional[str]]:
         try:
             msg = MIMEMultipart()
-            msg["From"] = from_email
+            msg["From"] = f"{sender_name} <{from_email}>" if sender_name else from_email
             msg["To"] = to_email
             msg["Subject"] = subject
+            if reply_to:
+                msg["Reply-To"] = reply_to
             msg.attach(MIMEText(body, "plain"))
 
-            server = smtplib.SMTP(host, port, timeout=10)
-            try:
-                server.starttls()
-            except Exception:
-                pass  # Ignore if STARTTLS not supported (e.g. local relay)
+            if str(encryption).upper() == "SSL":
+                server = smtplib.SMTP_SSL(host, port, timeout=10)
+            else:
+                server = smtplib.SMTP(host, port, timeout=10)
+                if str(encryption).upper() in ("TLS", "STARTTLS"):
+                    server.starttls()
 
             if user and password:
                 server.login(user, password)
@@ -133,7 +121,7 @@ class NotificationService:
         incident_dict: dict
     ):
         """
-        Dispatch notification across all enabled channels (Telegram, Email) and log result.
+        Dispatch an email notification and log the result. Email is the only supported channel.
         """
         settings = await NotificationService.get_settings_map(db)
         
@@ -148,40 +136,29 @@ class NotificationService:
         incident_id = incident_dict.get("id")
         device_id = device_dict.get("id")
 
-        # 1. Telegram Dispatch
-        tg_enabled = settings.get("telegram_enabled", "").lower() in ("true", "1", "yes")
-        bot_token = settings.get("telegram_bot_token")
-        chat_id = settings.get("telegram_chat_id")
-
-        if tg_enabled and bot_token and chat_id:
-            success, err = await NotificationService.send_telegram(bot_token, chat_id, message)
-            log = NotificationLog(
-                incident_id=incident_id,
-                device_id=device_id,
-                channel="TELEGRAM",
-                recipient=chat_id,
-                event_type=event_type,
-                subject=subject,
-                message_body=message,
-                status="SENT" if success else "FAILED",
-                error_message=err
-            )
-            db.add(log)
-
-        # 2. Email SMTP Dispatch
+        # Email SMTP Dispatch
+        email_enabled = settings.get("email_notifications_enabled", settings.get("smtp_enabled", "false")).lower() in ("true", "1", "yes")
         smtp_enabled = settings.get("smtp_enabled", "").lower() in ("true", "1", "yes")
+        if event_type == "DOWN":
+            email_enabled = email_enabled and settings.get("down_notifications_enabled", "true").lower() in ("true", "1", "yes")
+        elif event_type == "RECOVERY":
+            email_enabled = email_enabled and settings.get("recovery_notifications_enabled", "true").lower() in ("true", "1", "yes")
         smtp_host = settings.get("smtp_host")
         smtp_port = int(settings.get("smtp_port", "587"))
         smtp_user = settings.get("smtp_user")
         smtp_pass = settings.get("smtp_password")
         smtp_from = settings.get("smtp_from_email", "nms-alert@local")
         smtp_to = settings.get("smtp_to_emails")
+        smtp_encryption = settings.get("smtp_encryption", "TLS")
+        sender_name = settings.get("smtp_sender_name", "NMS")
+        reply_to = settings.get("smtp_reply_to") or None
 
-        if smtp_enabled and smtp_host and smtp_to:
+        if email_enabled and smtp_enabled and smtp_host and smtp_to:
             recipients = [r.strip() for r in smtp_to.split(",") if r.strip()]
             for to_addr in recipients:
                 success, err = await NotificationService.send_email(
-                    smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from, to_addr, subject, message
+                    smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from, to_addr, subject, message,
+                    smtp_encryption, sender_name, reply_to
                 )
                 log = NotificationLog(
                     incident_id=incident_id,

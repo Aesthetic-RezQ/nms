@@ -90,7 +90,7 @@ class DeviceStateMachine:
                 else:
                     # Not yet recovered enough
                     new_status = "DOWN"
-            elif previous_status in ("UP", "WARNING", "UNKNOWN", "MAINTENANCE"):
+            elif previous_status in ("UP", "WARNING", "UNKNOWN", "MAINTENANCE", "UNREACHABLE_PARENT_DOWN"):
                 # Evaluate Latency Warning vs UP
                 latency = ping_result.latency or 0.0
                 if latency >= latency_critical_threshold:
@@ -113,7 +113,7 @@ class DeviceStateMachine:
             if state.first_failure_at is None:
                 state.first_failure_at = now
 
-            if previous_status in ("UP", "WARNING", "UNKNOWN"):
+            if previous_status in ("UP", "WARNING", "UNKNOWN", "UNREACHABLE_PARENT_DOWN"):
                 if state.consecutive_failures >= failure_threshold:
                     new_status = "DOWN"
                     event_type = "DOWN"

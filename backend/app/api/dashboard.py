@@ -34,6 +34,7 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
             func.count(Device.id).filter(Device.current_status == "WARNING").label("warning"),
             func.count(Device.id).filter(Device.current_status == "UNKNOWN").label("unknown"),
             func.count(Device.id).filter(Device.current_status == "MAINTENANCE").label("maintenance"),
+            func.count(Device.id).filter(Device.current_status == "UNREACHABLE_PARENT_DOWN").label("unreachable_parent_down"),
             func.max(Device.last_check).label("latest_check")
         )
     )
@@ -45,6 +46,7 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
     warning = counts_row.warning if counts_row else 0
     unknown = counts_row.unknown if counts_row else 0
     maintenance = counts_row.maintenance if counts_row else 0
+    unreachable_parent_down = counts_row.unreachable_parent_down if counts_row else 0
     latest_check = counts_row.latest_check if counts_row else None
 
     # 1b. Critical (infrastructure) vs Non-Critical (workstation) device counts
@@ -55,6 +57,7 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
             func.count(Device.id).filter(Device.current_status == "UP").label("up"),
             func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
             func.count(Device.id).filter(Device.current_status == "WARNING").label("warning"),
+            func.count(Device.id).filter(Device.current_status == "UNREACHABLE_PARENT_DOWN").label("unreachable_parent_down"),
         ).outerjoin(Category, Device.category_id == Category.id)
         .where(Category.criticality != "NON_CRITICAL")
     )
@@ -74,7 +77,8 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
         "total": infra_row.total if infra_row else 0,
         "up": infra_row.up if infra_row else 0,
         "down": infra_row.down if infra_row else 0,
-        "warning": infra_row.warning if infra_row else 0
+        "warning": infra_row.warning if infra_row else 0,
+        "unreachable_parent_down": infra_row.unreachable_parent_down if infra_row else 0
     }
 
     workstation_counts = {
@@ -128,7 +132,8 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
             "down": down,
             "warning": warning,
             "unknown": unknown,
-            "maintenance": maintenance
+            "maintenance": maintenance,
+            "unreachable_parent_down": unreachable_parent_down
         },
         "infrastructure_counts": infrastructure_counts,
         "workstation_counts": workstation_counts,

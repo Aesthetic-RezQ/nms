@@ -47,7 +47,7 @@ async def test_notification(
     current_user = Depends(require_admin)
 ):
     """
-    Test sending a notification via Telegram or Email SMTP (Admin only).
+    Test the configured email notification channel (Admin only).
     """
     settings = await NotificationService.get_settings_map(db)
     now_str = format_app_datetime(datetime.now(timezone.utc))
@@ -63,47 +63,15 @@ async def test_notification(
 
     channel_upper = request.channel.upper()
 
-    if channel_upper == "TELEGRAM":
-        bot_token = settings.get("telegram_bot_token")
-        chat_id = request.recipient or settings.get("telegram_chat_id")
-
-        if not bot_token or not chat_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Telegram bot token and chat ID must be configured in settings."
-            )
-
-        success, error = await NotificationService.send_telegram(bot_token, chat_id, test_body)
-        
-        # Log result
-        log = NotificationLog(
-            channel="TELEGRAM",
-            recipient=chat_id,
-            event_type="TEST",
-            subject="[TEST] Telegram Notification",
-            message_body=test_body,
-            status="SENT" if success else "FAILED",
-            error_message=error
-        )
-        db.add(log)
-        await db.commit()
-
-        if not success:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Telegram test failed: {error}")
-
-        return NotificationTestResponse(
-            success=True,
-            channel="TELEGRAM",
-            recipient=chat_id,
-            message="Telegram test message sent successfully!"
-        )
-
-    elif channel_upper == "EMAIL":
+    if channel_upper == "EMAIL":
         smtp_host = settings.get("smtp_host")
         smtp_port = int(settings.get("smtp_port", "587"))
         smtp_user = settings.get("smtp_user")
         smtp_pass = settings.get("smtp_password")
         smtp_from = settings.get("smtp_from_email", "nms-alert@local")
+        smtp_encryption = settings.get("smtp_encryption", "TLS")
+        sender_name = settings.get("smtp_sender_name", "NMS")
+        reply_to = settings.get("smtp_reply_to") or None
         to_email = request.recipient or settings.get("smtp_to_emails", "").split(",")[0].strip()
 
         if not smtp_host or not to_email:
@@ -114,7 +82,8 @@ async def test_notification(
 
         subject = "[TEST] LAN Network Monitoring Test Email"
         success, error = await NotificationService.send_email(
-            smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from, to_email, subject, test_body
+            smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from, to_email, subject, test_body,
+            smtp_encryption, sender_name, reply_to
         )
 
         log = NotificationLog(
@@ -142,5 +111,5 @@ async def test_notification(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported notification channel: {request.channel}. Use EMAIL or TELEGRAM."
+            detail=f"Unsupported notification channel: {request.channel}. Email is the only supported notification channel."
         )

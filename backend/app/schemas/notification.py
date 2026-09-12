@@ -21,7 +21,7 @@ class NotificationLogRead(BaseModel):
 
 class TestNotificationRequest(BaseModel):
     channel: str = Field(..., description="Notification channel to test: EMAIL or TELEGRAM")
-    recipient: Optional[str] = Field(default=None, description="Target recipient email address or Telegram Chat ID override")
+    recipient: Optional[str] = Field(default=None, description="Target recipient email address override")
     custom_message: Optional[str] = Field(default=None, description="Optional custom test message")
 
 class NotificationTestResponse(BaseModel):

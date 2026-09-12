@@ -64,6 +64,20 @@ async def startup_event():
                 from sqlalchemy import text
                 await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS central_user_id VARCHAR(36)"))
                 await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_central_user_id ON users (central_user_id)"))
+                # Parent/dependency suppression uses a descriptive status value
+                # longer than the original MVP varchar(20) column. Only alter
+                # legacy installations; repeating ALTER TABLE on every startup
+                # would unnecessarily lock the monitoring tables.
+                for table_name, column_name in (("devices", "current_status"), ("monitoring_results", "status")):
+                    length_result = await conn.execute(text(
+                        "SELECT character_maximum_length FROM information_schema.columns "
+                        "WHERE table_name = :table_name AND column_name = :column_name"
+                    ), {"table_name": table_name, "column_name": column_name})
+                    max_length = length_result.scalar_one_or_none()
+                    if max_length is not None and max_length < 40:
+                        await conn.execute(text(
+                            f"ALTER TABLE {table_name} ALTER COLUMN {column_name} TYPE VARCHAR(40)"
+                        ))
         logger.info("Database tables ensured.")
 
         # Seed monitoring data only; identities are provisioned in CentralAuth.
@@ -112,13 +126,31 @@ async def startup_event():
                 ("telegram_enabled", "false", "boolean"),
                 ("telegram_bot_token", "", "secret"),
                 ("telegram_chat_id", "", "string"),
+                ("email_notifications_enabled", "true", "boolean"),
+                ("down_notifications_enabled", "true", "boolean"),
+                ("recovery_notifications_enabled", "true", "boolean"),
+                ("degraded_notifications_enabled", "true", "boolean"),
+                ("reminder_notifications_enabled", "true", "boolean"),
+                ("maintenance_suppression_enabled", "true", "boolean"),
+                ("parent_down_suppression_enabled", "true", "boolean"),
                 ("smtp_enabled", "false", "boolean"),
                 ("smtp_host", "", "string"),
                 ("smtp_port", "587", "integer"),
+                ("smtp_encryption", "TLS", "string"),
                 ("smtp_user", "", "string"),
                 ("smtp_password", "", "secret"),
                 ("smtp_from_email", "nms-alert@local", "string"),
+                ("smtp_sender_name", "NMS", "string"),
+                ("smtp_reply_to", "", "string"),
                 ("smtp_to_emails", "", "string"),
+                ("critical_reminder_1_minutes", "15", "integer"),
+                ("critical_reminder_2_minutes", "60", "integer"),
+                ("critical_reminder_repeat_hours", "4", "integer"),
+                ("high_reminder_1_minutes", "30", "integer"),
+                ("high_reminder_2_minutes", "120", "integer"),
+                ("high_reminder_repeat_hours", "6", "integer"),
+                ("medium_reminder_enabled", "false", "boolean"),
+                ("low_reminder_enabled", "false", "boolean"),
             ]:
                 res = await db.execute(select(SystemSetting).where(SystemSetting.key == k))
                 if not res.scalars().first():

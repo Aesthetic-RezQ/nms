@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Set
 from uuid import UUID
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -11,11 +11,13 @@ from monitoring.config import worker_settings
 from monitoring.icmp import AsyncICMPEngine, PingResult
 from monitoring.state_machine import DeviceStateMachine
 from monitoring.incident_manager import IncidentManager
+from monitoring.notifications import WorkerNotifier
 # Import models
 from app.models.device import Device
 from app.models.monitoring_result import MonitoringResult
 from app.models.system_setting import SystemSetting
 from app.models.incident import Incident
+from app.models.notification_log import NotificationLog
 from app.models.maintenance import MaintenanceWindow, maintenance_devices
 
 logger = logging.getLogger("nms.worker.scheduler")
@@ -47,6 +49,9 @@ class MonitoringScheduler:
     async def load_active_maintenance_windows(self, db: AsyncSession):
         """Load set of device IDs currently in active maintenance window (PRD §20)."""
         try:
+            if self.global_settings.get("maintenance_suppression_enabled", "true").lower() not in ("true", "1", "yes"):
+                self.active_maintenance_devices = set()
+                return
             now = datetime.now(timezone.utc)
             query = select(maintenance_devices.c.device_id).join(
                 MaintenanceWindow, maintenance_devices.c.maintenance_id == MaintenanceWindow.id
@@ -74,6 +79,88 @@ class MonitoringScheduler:
             return float(self.global_settings.get(key, default))
         except (ValueError, TypeError):
             return default
+
+    async def dispatch_due_reminders(self, db: AsyncSession):
+        """Send configured email reminders for incidents that remain open."""
+        if self.global_settings.get("reminder_notifications_enabled", "true").lower() not in ("true", "1", "yes"):
+            return
+        try:
+            from app.models.category import Category
+            res = await db.execute(
+                select(Incident, Device).join(Device, Device.id == Incident.device_id).where(
+                    Incident.status.in_(["OPEN", "ACKNOWLEDGED"])
+                )
+            )
+            rows = res.all()
+            cat_res = await db.execute(select(Category))
+            categories = {c.id: c for c in cat_res.scalars().all()}
+            now = datetime.now(timezone.utc)
+
+            for incident, device in rows:
+                if not incident.down_since:
+                    continue
+                down_since = incident.down_since
+                if down_since.tzinfo is None:
+                    down_since = down_since.replace(tzinfo=timezone.utc)
+                elapsed_minutes = (now - down_since).total_seconds() / 60
+                category = categories.get(device.category_id)
+                severity = (getattr(category, "criticality", "CRITICAL") if category else "CRITICAL").upper()
+
+                if severity == "CRITICAL":
+                    first = self.get_setting_int("critical_reminder_1_minutes", 15)
+                    second = self.get_setting_int("critical_reminder_2_minutes", 60)
+                    repeat_minutes = self.get_setting_int("critical_reminder_repeat_hours", 4) * 60
+                elif severity == "HIGH":
+                    first = self.get_setting_int("high_reminder_1_minutes", 30)
+                    second = self.get_setting_int("high_reminder_2_minutes", 120)
+                    repeat_minutes = self.get_setting_int("high_reminder_repeat_hours", 6) * 60
+                elif severity == "MEDIUM":
+                    if self.global_settings.get("medium_reminder_enabled", "false").lower() not in ("true", "1", "yes"):
+                        continue
+                    first, second, repeat_minutes = 60, 240, 480
+                else:
+                    if self.global_settings.get("low_reminder_enabled", "false").lower() not in ("true", "1", "yes"):
+                        continue
+                    first, second, repeat_minutes = 120, 480, 720
+
+                log_res = await db.execute(
+                    select(NotificationLog).where(
+                        NotificationLog.incident_id == incident.id,
+                        NotificationLog.channel == "EMAIL",
+                        NotificationLog.event_type.in_(["DOWN", "REMINDER"])
+                    ).order_by(NotificationLog.sent_at.desc())
+                )
+                logs = log_res.scalars().all()
+                reminder_count = sum(1 for log in logs if log.event_type == "REMINDER")
+                last_log = logs[0] if logs else None
+                due = False
+                if reminder_count == 0:
+                    due = elapsed_minutes >= first
+                elif reminder_count == 1:
+                    due = elapsed_minutes >= second
+                elif last_log and last_log.sent_at:
+                    last_sent = last_log.sent_at
+                    if last_sent.tzinfo is None:
+                        last_sent = last_sent.replace(tzinfo=timezone.utc)
+                    due = (now - last_sent).total_seconds() / 60 >= repeat_minutes
+                if not due:
+                    continue
+
+                dev_data = {
+                    "id": device.id,
+                    "device_name": device.device_name,
+                    "ip_address": device.ip_address,
+                    "current_status": device.current_status,
+                    "criticality": severity,
+                }
+                inc_data = {
+                    "id": incident.id,
+                    "down_since": incident.down_since,
+                    "reminder_number": reminder_count + 1,
+                }
+                await WorkerNotifier.trigger_reminder_notification(db, dev_data, inc_data)
+        except Exception as exc:
+            logger.warning(f"Could not dispatch incident reminders: {exc}")
 
     async def check_single_device(self, device_data: dict):
         """
@@ -106,6 +193,16 @@ class MonitoringScheduler:
                 is_in_maintenance=is_in_maintenance,
                 initial_status=device_data["current_status"]
             )
+
+            parent_suppressed = (
+                self.global_settings.get("parent_down_suppression_enabled", "true").lower() in ("true", "1", "yes")
+                and device_data.get("parent_device_id")
+                and device_data.get("parent_status") in ("DOWN", "UNREACHABLE_PARENT_DOWN")
+            )
+            if parent_suppressed:
+                trans.new_status = "UNREACHABLE_PARENT_DOWN"
+                trans.status_changed = device_data.get("current_status") != trans.new_status
+                trans.event_type = None
             
             now_utc = datetime.now(timezone.utc)
             
@@ -150,7 +247,11 @@ class MonitoringScheduler:
                     await db.commit()
 
                     # 3. Handle Incident creation or resolution (Change2.md: NON-CRITICAL bypass)
-                    if trans.event_type == "DOWN":
+                    if parent_suppressed:
+                        logger.info(
+                            f"ℹ️ [DEPENDENCY SUPPRESSED] Device: {device_name} | parent is DOWN; no child incident or email"
+                        )
+                    elif trans.event_type == "DOWN":
                         # Check category policy: skip incident/alert for non-critical devices
                         incident_enabled = device_data.get("incident_enabled", True)
                         if not incident_enabled:
@@ -168,6 +269,13 @@ class MonitoringScheduler:
                                 first_failure_at=trans.first_failure_at,
                                 failure_reason=reason,
                                 device_dict=device_data
+                            )
+                    elif trans.event_type == "WARNING_LATENCY":
+                        if device_data.get("alert_enabled", True):
+                            await WorkerNotifier.trigger_warning_notification(
+                                db=db,
+                                device_data={**device_data, "current_latency": ping_res.latency},
+                                incident_data={"failure_reason": "Latency or packet loss threshold exceeded"}
                             )
                     elif trans.event_type == "RECOVERED":
                         # Check category policy: skip recovery alert for non-critical devices
@@ -220,6 +328,7 @@ class MonitoringScheduler:
                         "device_name": dev.device_name,
                         "ip_address": dev.ip_address,
                         "parent_device_id": dev.parent_device_id,
+                        "parent_status": next((p.current_status for p in devices if p.id == dev.parent_device_id), None),
                         "ping_timeout": dev.ping_timeout,
                         "failure_threshold": dev.failure_threshold,
                         "recovery_threshold": dev.recovery_threshold,
@@ -242,6 +351,7 @@ class MonitoringScheduler:
                 if tasks:
                     logger.debug(f"Dispatching {len(tasks)} device monitoring checks...")
                     await asyncio.gather(*tasks, return_exceptions=True)
+                await self.dispatch_due_reminders(db)
 
         except Exception as e:
             logger.error(f"Error during monitoring cycle: {e}")

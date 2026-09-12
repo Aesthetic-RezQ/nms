@@ -85,7 +85,7 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const counts = summary?.status_counts || { total: 0, up: 0, down: 0, warning: 0, unknown: 0, maintenance: 0 };
+  const counts = summary?.status_counts || { total: 0, up: 0, down: 0, warning: 0, unknown: 0, maintenance: 0, unreachable_parent_down: 0 };
   const infraCounts = summary?.infrastructure_counts || { total: 0, up: 0, down: 0, warning: 0 };
   const wsCounts = summary?.workstation_counts || { total: 0, up: 0, down: 0 };
   const workerStatus = summary?.worker_status;
@@ -130,6 +130,7 @@ export default function DashboardPage() {
         <Stat label="Warning" value={summary ? counts.warning : '—'} tone="warning" />
         <Stat label="Unknown" value={summary ? counts.unknown : '—'} tone="info" />
         <Stat label="Maintenance" value={summary ? counts.maintenance : '—'} tone="info" />
+        <Stat label="Parent Down" value={summary ? counts.unreachable_parent_down : '—'} tone="warning" />
         <Stat label="Workstations" value={summary ? wsCounts.up + ' / ' + wsCounts.total : '—'} meta={summary ? 'Offline: ' + wsCounts.down : undefined} />
       </div>
 

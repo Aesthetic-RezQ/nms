@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Button, Row, Col, Table, Badge, Spinner, Alert } from '../components/bic';
 import { toast } from '../components/bic/Notifications';
-import { MdSave, MdSend, MdEmail, MdSendToMobile, MdSettings, MdHistory, MdRefresh } from 'react-icons/md';
+import { MdSave, MdSend, MdEmail, MdSettings, MdHistory, MdRefresh } from 'react-icons/md';
 import { get, put, post } from '../api/client';
 import dayjs from 'dayjs';
 
@@ -16,17 +16,29 @@ export default function SettingsPage() {
     data_retention_raw_days: '7',
     data_retention_aggregate_days: '30',
     app_timezone: 'Asia/Jakarta',
-    // Telegram
-    telegram_enabled: 'false',
-    telegram_bot_token: '',
-    telegram_chat_id: '',
+    // Email-only notification policy
+    email_notifications_enabled: 'true',
+    down_notifications_enabled: 'true',
+    recovery_notifications_enabled: 'true',
+    degraded_notifications_enabled: 'true',
+    maintenance_suppression_enabled: 'true',
+    parent_down_suppression_enabled: 'true',
+    critical_reminder_1_minutes: '15',
+    critical_reminder_2_minutes: '60',
+    critical_reminder_repeat_hours: '4',
+    high_reminder_1_minutes: '30',
+    high_reminder_2_minutes: '120',
+    high_reminder_repeat_hours: '6',
     // SMTP
     smtp_enabled: 'false',
     smtp_host: '',
     smtp_port: '587',
+    smtp_encryption: 'TLS',
     smtp_user: '',
     smtp_password: '',
     smtp_from_email: 'nms-alert@local',
+    smtp_sender_name: 'NMS',
+    smtp_reply_to: '',
     smtp_to_emails: ''
   });
 
@@ -36,7 +48,6 @@ export default function SettingsPage() {
   const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Testing states
-  const [testingTg, setTestingTg] = useState(false);
   const [testingSmtp, setTestingSmtp] = useState(false);
 
   const fetchSettings = async () => {
@@ -104,27 +115,6 @@ export default function SettingsPage() {
       toast.error(error.response?.data?.detail || 'Failed to save settings');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleTestTelegram = async () => {
-    if (!settings.telegram_bot_token || !settings.telegram_chat_id) {
-      toast.error('Telegram bot token and chat ID must be configured.');
-      return;
-    }
-    setTestingTg(true);
-    try {
-      await persistSettings();
-      const res = await post('/notifications/test', {
-        channel: 'TELEGRAM',
-        custom_message: 'Manual test from NMS Settings interface'
-      });
-      toast.success(res.data.message || 'Telegram test sent successfully!');
-      fetchNotificationLogs();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Telegram test failed');
-    } finally {
-      setTestingTg(false);
     }
   };
 
@@ -261,61 +251,38 @@ export default function SettingsPage() {
                       </Form.Select>
                     </Form.Group>
                   </Col>
+                  <Col sm={12}>
+                    <div className="bic-inset bic-mt-2">
+                      <p className="bic-text-sm bic-text-secondary bic-mb-2">Email notification policy</p>
+                      <Row>
+                        <Col sm={6}>
+                          <Form.Check type="switch" id="email-notifications-switch" name="email_notifications_enabled" label="Email alerts enabled" checked={settings.email_notifications_enabled === 'true'} onChange={handleChange} />
+                          <Form.Check type="switch" id="down-notifications-switch" name="down_notifications_enabled" label="DOWN alerts" checked={settings.down_notifications_enabled === 'true'} onChange={handleChange} />
+                          <Form.Check type="switch" id="recovery-notifications-switch" name="recovery_notifications_enabled" label="Recovery alerts" checked={settings.recovery_notifications_enabled === 'true'} onChange={handleChange} />
+                        </Col>
+                        <Col sm={6}>
+                          <Form.Check type="switch" id="degraded-notifications-switch" name="degraded_notifications_enabled" label="Degraded / warning alerts" checked={settings.degraded_notifications_enabled === 'true'} onChange={handleChange} />
+                          <Form.Check type="switch" id="maintenance-suppression-switch" name="maintenance_suppression_enabled" label="Suppress maintenance alerts" checked={settings.maintenance_suppression_enabled === 'true'} onChange={handleChange} />
+                          <Form.Check type="switch" id="parent-suppression-switch" name="parent_down_suppression_enabled" label="Suppress child alerts when parent is down" checked={settings.parent_down_suppression_enabled === 'true'} onChange={handleChange} />
+                        </Col>
+                      </Row>
+                      <p className="bic-text-sm bic-text-secondary bic-mt-4 bic-mb-2">Open incident reminder schedule</p>
+                      <Row>
+                        <Col sm={4}><Form.Group><Form.Label>Critical first (min)</Form.Label><Form.Control type="number" min="1" name="critical_reminder_1_minutes" value={settings.critical_reminder_1_minutes} onChange={handleChange} /></Form.Group></Col>
+                        <Col sm={4}><Form.Group><Form.Label>Critical second (min)</Form.Label><Form.Control type="number" min="1" name="critical_reminder_2_minutes" value={settings.critical_reminder_2_minutes} onChange={handleChange} /></Form.Group></Col>
+                        <Col sm={4}><Form.Group><Form.Label>Critical repeat (hours)</Form.Label><Form.Control type="number" min="1" name="critical_reminder_repeat_hours" value={settings.critical_reminder_repeat_hours} onChange={handleChange} /></Form.Group></Col>
+                        <Col sm={4}><Form.Group><Form.Label>High first (min)</Form.Label><Form.Control type="number" min="1" name="high_reminder_1_minutes" value={settings.high_reminder_1_minutes} onChange={handleChange} /></Form.Group></Col>
+                        <Col sm={4}><Form.Group><Form.Label>High second (min)</Form.Label><Form.Control type="number" min="1" name="high_reminder_2_minutes" value={settings.high_reminder_2_minutes} onChange={handleChange} /></Form.Group></Col>
+                        <Col sm={4}><Form.Group><Form.Label>High repeat (hours)</Form.Label><Form.Control type="number" min="1" name="high_reminder_repeat_hours" value={settings.high_reminder_repeat_hours} onChange={handleChange} /></Form.Group></Col>
+                      </Row>
+                    </div>
+                  </Col>
                 </Row>
               </Card.Body>
             </Card>
           </Col>
 
-          {/* Telegram Notification Channel */}
           <Col lg={6}>
-            <Card className="bic-mb-6">
-              <Card.Header>
-                <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
-                  <MdSendToMobile className="bic-text-brand" /> Telegram Bot Alerts
-                </h2>
-                <Form.Check
-                  type="switch"
-                  id="tg-switch"
-                  name="telegram_enabled"
-                  label="Enabled"
-                  checked={settings.telegram_enabled === 'true'}
-                  onChange={handleChange}
-                />
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="bic-mb-4">
-                  <Form.Label>Telegram Bot Token</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="telegram_bot_token"
-                    placeholder="e.g. 123456789:ABCdefGhIJKlmNoPQRstuVwxyZ"
-                    value={settings.telegram_bot_token}
-                    onChange={handleChange}
-                  />
-                  <Form.Text className="bic-text-secondary">Obtained from @BotFather on Telegram</Form.Text>
-                </Form.Group>
-                <Form.Group className="bic-mb-4">
-                  <Form.Label>Telegram Chat / Group ID</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="telegram_chat_id"
-                    placeholder="e.g. -100123456789 or 987654321"
-                    value={settings.telegram_chat_id}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleTestTelegram}
-                  disabled={testingTg || settings.telegram_enabled !== 'true' || !settings.telegram_bot_token || !settings.telegram_chat_id}
-                >
-                  <MdSend className="bic-mr-1" />
-                  {testingTg ? 'Testing...' : 'Send Test Telegram Alert'}
-                </Button>
-              </Card.Body>
-            </Card>
-
             {/* Email SMTP Channel */}
             <Card>
               <Card.Header>
@@ -360,6 +327,24 @@ export default function SettingsPage() {
                 <Row className="bic-gap-2 bic-mb-4">
                   <Col sm={6}>
                     <Form.Group>
+                      <Form.Label>Encryption</Form.Label>
+                      <Form.Select name="smtp_encryption" value={settings.smtp_encryption} onChange={handleChange}>
+                        <option value="TLS">STARTTLS (TLS)</option>
+                        <option value="SSL">SSL/TLS</option>
+                        <option value="NONE">None</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+                  <Col sm={6}>
+                    <Form.Group>
+                      <Form.Label>Sender Name</Form.Label>
+                      <Form.Control type="text" name="smtp_sender_name" value={settings.smtp_sender_name} onChange={handleChange} />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row className="bic-gap-2 bic-mb-4">
+                  <Col sm={6}>
+                    <Form.Group>
                       <Form.Label>SMTP User</Form.Label>
                       <Form.Control
                         type="text"
@@ -381,6 +366,10 @@ export default function SettingsPage() {
                     </Form.Group>
                   </Col>
                 </Row>
+                <Form.Group className="bic-mb-4">
+                  <Form.Label>Reply-To Email (optional)</Form.Label>
+                  <Form.Control type="email" name="smtp_reply_to" value={settings.smtp_reply_to} onChange={handleChange} />
+                </Form.Group>
                 <Form.Group className="bic-mb-4">
                   <Form.Label>From Email</Form.Label>
                   <Form.Control

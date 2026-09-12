@@ -11,12 +11,14 @@ class DeviceStatusCounts(BaseModel):
     warning: int = 0
     unknown: int = 0
     maintenance: int = 0
+    unreachable_parent_down: int = 0
 
 class InfrastructureCounts(BaseModel):
     total: int = 0
     up: int = 0
     down: int = 0
     warning: int = 0
+    unreachable_parent_down: int = 0
 
 class WorkstationCounts(BaseModel):
     total: int = 0
