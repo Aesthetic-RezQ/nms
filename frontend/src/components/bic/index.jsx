@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useId, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 
 const classes = (...values) => values.filter(Boolean).join(' ');
 const FieldContext = createContext({});
@@ -29,9 +29,95 @@ export function ButtonGroup({ size, className, ...props }) {
   return <div role="group" className={classes('bic-button-group', size === 'sm' && 'bic-button-group-sm', className)} {...props} />;
 }
 
-export function Table({ responsive, hover, className, children, ...props }) {
+const unsortableColumnLabels = new Set(['action', 'actions', 'change', 'changes']);
+
+const normalizeSortValue = (value) => {
+  const text = String(value || '').trim();
+  if (!text || ['—', 'n/a', 'pending', 'ongoing', 'uncorrelated'].includes(text.toLowerCase())) return null;
+
+  const ipAddress = text.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipAddress) return { type: 'number', value: ipAddress.slice(1).reduce((total, part) => total * 256 + Number(part), 0) };
+
+  const duration = text.match(/^(-?\d+(?:\.\d+)?)\s*(ms|s|m|h|d|%)?$/i);
+  if (duration) {
+    const multipliers = { ms: 1, s: 1000, m: 60000, h: 3600000, d: 86400000, '%': 1 };
+    return { type: 'number', value: Number(duration[1]) * (multipliers[(duration[2] || '').toLowerCase()] || 1) };
+  }
+
+  const date = Date.parse(text);
+  if (!Number.isNaN(date) && /\d/.test(text)) return { type: 'number', value: date };
+  return { type: 'text', value: text };
+};
+
+const compareRows = (left, right, columnIndex, direction) => {
+  const leftValue = normalizeSortValue(left.cells[columnIndex]?.dataset.sortValue || left.cells[columnIndex]?.textContent);
+  const rightValue = normalizeSortValue(right.cells[columnIndex]?.dataset.sortValue || right.cells[columnIndex]?.textContent);
+  if (!leftValue && !rightValue) return 0;
+  if (!leftValue) return 1;
+  if (!rightValue) return -1;
+
+  const result = leftValue.type === 'number' && rightValue.type === 'number'
+    ? leftValue.value - rightValue.value
+    : String(leftValue.value).localeCompare(String(rightValue.value), undefined, { numeric: true, sensitivity: 'base' });
+  return direction === 'asc' ? result : -result;
+};
+
+export function Table({ responsive, hover, sortable = true, className, children, ...props }) {
+  const tableRef = useRef(null);
+  const [sort, setSort] = useState(null);
+
+  useLayoutEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    const headers = [...table.querySelectorAll('thead th')];
+    headers.forEach((header, columnIndex) => {
+      const label = header.textContent.trim().toLowerCase();
+      const canSort = sortable && header.dataset.sortable !== 'false' && !unsortableColumnLabels.has(label);
+      header.classList.toggle('bic-sortable-header', canSort);
+      header.classList.toggle('is-sort-asc', canSort && sort?.columnIndex === columnIndex && sort.direction === 'asc');
+      header.classList.toggle('is-sort-desc', canSort && sort?.columnIndex === columnIndex && sort.direction === 'desc');
+      if (!canSort) {
+        header.removeAttribute('tabindex');
+        header.removeAttribute('aria-sort');
+        return;
+      }
+      header.tabIndex = 0;
+      header.setAttribute('aria-sort', sort?.columnIndex === columnIndex ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none');
+    });
+  }, [children, sortable, sort]);
+
+  useLayoutEffect(() => {
+    if (!sort) return;
+    const table = tableRef.current;
+    if (!table) return;
+    [...table.tBodies].forEach(body => {
+      const rows = [...body.rows].filter(row => row.cells.length > sort.columnIndex && [...row.cells].every(cell => cell.colSpan === 1));
+      rows.sort((left, right) => compareRows(left, right, sort.columnIndex, sort.direction));
+      rows.forEach(row => body.appendChild(row));
+    });
+  }, [children, sort]);
+
+  const requestSort = (header) => {
+    const headers = [...tableRef.current?.querySelectorAll('thead th') || []];
+    const columnIndex = headers.indexOf(header);
+    if (columnIndex < 0 || !header.classList.contains('bic-sortable-header')) return;
+    setSort(current => ({
+      columnIndex,
+      direction: current?.columnIndex === columnIndex && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const onHeaderClick = event => requestSort(event.target.closest('th'));
+  const onHeaderKeyDown = event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const header = event.target.closest('th');
+    if (!header?.classList.contains('bic-sortable-header')) return;
+    event.preventDefault();
+    requestSort(header);
+  };
+
   return <div className="bic-table-wrap" tabIndex={0} role="region" aria-label={props['aria-label'] || 'Data table'}>
-    <table className={classes('bic-table', className)} {...props}>{children}</table>
+    <table ref={tableRef} className={classes('bic-table', className)} onClick={onHeaderClick} onKeyDown={onHeaderKeyDown} {...props}>{children}</table>
   </div>;
 }
 

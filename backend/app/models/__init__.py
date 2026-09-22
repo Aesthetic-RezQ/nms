@@ -8,5 +8,6 @@ from app.models.system_setting import SystemSetting
 from app.models.audit_log import AuditLog
 from app.models.monitoring_result import MonitoringResult
 from app.models.incident import Incident
+from app.models.ping_timeout_log import PingTimeoutLog
 from app.models.notification_log import NotificationLog
 from app.models.maintenance import MaintenanceWindow, maintenance_devices

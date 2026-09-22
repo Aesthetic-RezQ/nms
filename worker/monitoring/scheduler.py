@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Set
 from uuid import UUID
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy import select, update, insert, and_
+from sqlalchemy import select, update, insert, and_, text
 import math
 
 from monitoring.config import worker_settings
@@ -18,6 +18,7 @@ from app.models.monitoring_result import MonitoringResult
 from app.models.system_setting import SystemSetting
 from app.models.incident import Incident
 from app.models.notification_log import NotificationLog
+from app.models.ping_timeout_log import PingTimeoutLog
 from app.models.maintenance import MaintenanceWindow, maintenance_devices
 
 logger = logging.getLogger("nms.worker.scheduler")
@@ -36,6 +37,7 @@ class MonitoringScheduler:
         self._last_checked_times: Dict[UUID, float] = {}
         self.global_settings: Dict[str, any] = {}
         self.active_maintenance_devices: Set[UUID] = set()
+        self._last_retention_cleanup = 0.0
 
     async def load_global_settings(self, db: AsyncSession):
         """Fetch system settings for fallback thresholds."""
@@ -79,6 +81,39 @@ class MonitoringScheduler:
             return float(self.global_settings.get(key, default))
         except (ValueError, TypeError):
             return default
+
+    async def _record_ping_timeouts(self, device_data: dict, ping_res: PingResult, timeout: int, timestamp: datetime):
+        """Persist raw missed probes independently of the monitoring transaction."""
+        timeout_count = ping_res.timed_out_probes
+        if timeout_count <= 0:
+            return
+        reason = (ping_res.error_message or "").lower()
+        reason_code = "UNREACHABLE" if "unreachable" in reason else ("TIMEOUT" if "timeout" in reason else "ICMP_ERROR")
+        try:
+            async with self.session_factory() as db:
+                active = (await db.execute(
+                    select(Incident).where(
+                        Incident.device_id == device_data["id"],
+                        Incident.status.in_(["OPEN", "ACKNOWLEDGED"]),
+                    ).order_by(Incident.down_since.asc())
+                )).scalars().first()
+                db.add_all([
+                    PingTimeoutLog(
+                        device_id=device_data["id"],
+                        timestamp=timestamp,
+                        probe_no=probe_no,
+                        timeout_ms=int(timeout * 1000),
+                        reason_code=reason_code,
+                        incident_id=active.id if active else None,
+                    )
+                    for probe_no in range(1, timeout_count + 1)
+                ])
+                if active:
+                    active.timeout_count = (active.timeout_count or 0) + timeout_count
+                await db.commit()
+        except Exception as exc:
+            # An audit write must never change the monitoring state decision.
+            logger.warning("Database audit write failure for device %s: %s", device_data["id"], exc)
 
     async def dispatch_due_reminders(self, db: AsyncSession):
         """Send configured email reminders for incidents that remain open."""
@@ -162,6 +197,62 @@ class MonitoringScheduler:
         except Exception as exc:
             logger.warning(f"Could not dispatch incident reminders: {exc}")
 
+    async def cleanup_timeout_logs(self, db: AsyncSession):
+        """Delete expired raw timeout evidence in small batches."""
+        retention_days = self.get_setting_int("ping_timeout_retention_days", 365)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=max(1, retention_days))
+        total = 0
+        batch_size = 1000
+        try:
+            while True:
+                result = await db.execute(text("""
+                    DELETE FROM ping_timeout_logs
+                    WHERE id IN (
+                        SELECT id FROM ping_timeout_logs
+                        WHERE timestamp < :cutoff
+                        ORDER BY id
+                        LIMIT :batch_size
+                    )
+                """), {"cutoff": cutoff, "batch_size": batch_size})
+                deleted = max(result.rowcount or 0, 0)
+                await db.commit()
+                total += deleted
+                if deleted < batch_size:
+                    break
+            if total:
+                logger.info("Ping timeout retention cleanup deleted %s records", total)
+        except Exception as exc:
+            await db.rollback()
+            logger.warning("Ping timeout retention cleanup failed: %s", exc)
+
+    async def cleanup_raw_monitoring_results(self, db: AsyncSession):
+        """Delete monitoring results older than the configured raw-data retention."""
+        retention_days = self.get_setting_int("data_retention_raw_days", 7)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=max(1, retention_days))
+        total = 0
+        batch_size = 10000
+        try:
+            while True:
+                result = await db.execute(text("""
+                    DELETE FROM monitoring_results
+                    WHERE id IN (
+                        SELECT id FROM monitoring_results
+                        WHERE checked_at < :cutoff
+                        ORDER BY checked_at, id
+                        LIMIT :batch_size
+                    )
+                """), {"cutoff": cutoff, "batch_size": batch_size})
+                deleted = max(result.rowcount or 0, 0)
+                await db.commit()
+                total += deleted
+                if deleted < batch_size:
+                    break
+            if total:
+                logger.info("Raw monitoring retention cleanup deleted %s records", total)
+        except Exception as exc:
+            await db.rollback()
+            logger.warning("Raw monitoring retention cleanup failed: %s", exc)
+
     async def check_single_device(self, device_data: dict):
         """
         Ping a single device, evaluate state machine, update database, manage incidents.
@@ -174,6 +265,13 @@ class MonitoringScheduler:
             
             # Execute ICMP Ping
             ping_res: PingResult = await self.icmp_engine.ping(ip_address=ip_address, timeout=timeout)
+            now_utc = datetime.now(timezone.utc)
+            if ping_res.timed_out_probes:
+                logger.info(
+                    "ICMP probe timeout: device=%s probes=%s timeout_ms=%s",
+                    device_name, ping_res.timed_out_probes, int(timeout * 1000),
+                )
+                await self._record_ping_timeouts(device_data, ping_res, timeout, now_utc)
             
             # Extract thresholds
             fail_thresh = device_data["failure_threshold"] or self.get_setting_int("default_failure_threshold", worker_settings.DEFAULT_FAILURE_THRESHOLD)
@@ -203,8 +301,6 @@ class MonitoringScheduler:
                 trans.new_status = "UNREACHABLE_PARENT_DOWN"
                 trans.status_changed = device_data.get("current_status") != trans.new_status
                 trans.event_type = None
-            
-            now_utc = datetime.now(timezone.utc)
             
             # Log transition if status changed
             if trans.status_changed:
@@ -238,7 +334,7 @@ class MonitoringScheduler:
                         dev_update["last_seen"] = now_utc
                     if trans.new_status == "UP":
                         dev_update["last_up"] = now_utc
-                    elif trans.new_status == "DOWN":
+                    elif trans.new_status == "DOWN" and trans.previous_status != "DOWN":
                         dev_update["last_down"] = now_utc
 
                     await db.execute(
@@ -341,6 +437,14 @@ class MonitoringScheduler:
                         "sla_enabled": getattr(category, 'sla_enabled', True) if category else True
                     }
                     interval = dev.monitoring_interval or default_interval
+                    if dev.current_status == "DOWN":
+                        down_interval = self.get_setting_int("down_monitoring_interval", 60)
+                        long_down_minutes = self.get_setting_int("long_down_threshold_minutes", 15)
+                        long_down_interval = self.get_setting_int("long_down_monitoring_interval", 300)
+                        if dev.last_down:
+                            down_since = dev.last_down if dev.last_down.tzinfo else dev.last_down.replace(tzinfo=timezone.utc)
+                            down_age = (datetime.now(timezone.utc) - down_since).total_seconds()
+                            interval = long_down_interval if down_age >= long_down_minutes * 60 else down_interval
                     last_checked = self._last_checked_times.get(dev.id, 0.0)
 
                     # Check if device check is due
@@ -352,6 +456,11 @@ class MonitoringScheduler:
                     logger.debug(f"Dispatching {len(tasks)} device monitoring checks...")
                     await asyncio.gather(*tasks, return_exceptions=True)
                 await self.dispatch_due_reminders(db)
+                now_monotonic = asyncio.get_event_loop().time()
+                if now_monotonic - self._last_retention_cleanup >= 3600:
+                    await self.cleanup_raw_monitoring_results(db)
+                    await self.cleanup_timeout_logs(db)
+                    self._last_retention_cleanup = now_monotonic
 
         except Exception as e:
             logger.error(f"Error during monitoring cycle: {e}")

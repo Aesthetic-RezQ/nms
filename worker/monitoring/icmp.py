@@ -22,6 +22,7 @@ class PingResult:
     error_message: Optional[str] = None
     packets_sent: int = 0
     packets_received: int = 0
+    timed_out_probes: int = 0
 
 class AsyncICMPEngine:
     def __init__(self, ping_count: int = 2):
@@ -49,6 +50,7 @@ class AsyncICMPEngine:
                     packet_loss=round(packet_loss_pct, 2),
                     packets_sent=host.packets_sent,
                     packets_received=host.packets_received,
+                    timed_out_probes=max(0, host.packets_sent - host.packets_received),
                     error_message=None
                 )
             else:
@@ -58,6 +60,7 @@ class AsyncICMPEngine:
                     packet_loss=round(packet_loss_pct, 2),
                     packets_sent=host.packets_sent,
                     packets_received=host.packets_received,
+                    timed_out_probes=max(1, host.packets_sent - host.packets_received),
                     error_message="Host unreachable or request timed out"
                 )
 
@@ -71,6 +74,8 @@ class AsyncICMPEngine:
                     is_alive=False,
                     latency=None,
                     packet_loss=100.0,
+                    packets_sent=self.ping_count,
+                    timed_out_probes=self.ping_count,
                     error_message="Ping timeout"
                 )
             elif "Unreachable" in err_type or "unreachable" in err_msg.lower():
@@ -78,6 +83,8 @@ class AsyncICMPEngine:
                     is_alive=False,
                     latency=None,
                     packet_loss=100.0,
+                    packets_sent=self.ping_count,
+                    timed_out_probes=self.ping_count,
                     error_message=f"Destination unreachable: {err_msg}"
                 )
             else:
@@ -86,5 +93,7 @@ class AsyncICMPEngine:
                     is_alive=False,
                     latency=None,
                     packet_loss=100.0,
+                    packets_sent=self.ping_count,
+                    timed_out_probes=self.ping_count,
                     error_message=f"ICMP error ({err_type}): {err_msg}"
                 )

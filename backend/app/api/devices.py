@@ -1,7 +1,15 @@
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.schemas.device import DeviceCreate, DeviceUpdate, DeviceRead, DeviceListFilter, DeviceBulkImportResult
+from app.schemas.device import (
+    DeviceCreate,
+    DeviceUpdate,
+    DeviceRead,
+    DeviceListFilter,
+    DeviceBulkImportResult,
+    DeviceBulkDeleteRequest,
+    DeviceBulkDeleteResult,
+)
 from app.schemas.common import PaginatedResponse, MessageResponse
 from app.services.device_service import DeviceService
 from app.services.audit_service import AuditService
@@ -43,6 +51,19 @@ async def create_device(data: DeviceCreate, db: AsyncSession = Depends(get_db), 
     device = await DeviceService.create(db, data)
     await AuditService.create_log(db, user_id=current_user.id, username=current_user.username, action="DEVICE_CREATED", object_type="device", object_id=str(device['id']))
     return device
+
+@router.delete("/bulk", response_model=DeviceBulkDeleteResult)
+async def bulk_delete_devices(data: DeviceBulkDeleteRequest, db: AsyncSession = Depends(get_db), current_user = Depends(require_admin)):
+    deleted = await DeviceService.bulk_delete(db, data.device_ids)
+    await AuditService.create_log(
+        db,
+        user_id=current_user.id,
+        username=current_user.username,
+        action="DEVICES_BULK_DELETED",
+        object_type="device",
+        new_value={"device_ids": [str(device_id) for device_id in data.device_ids], "deleted_count": deleted},
+    )
+    return DeviceBulkDeleteResult(deleted=deleted)
 
 @router.get("/{device_id}", response_model=DeviceRead)
 async def get_device(device_id: UUID, db: AsyncSession = Depends(get_db), _ = Depends(get_current_user)):

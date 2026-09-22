@@ -33,3 +33,19 @@ class DeviceMetricsSummary(BaseModel):
     avg_latency_24h: Optional[float] = None
     min_latency_24h: Optional[float] = None
     max_latency_24h: Optional[float] = None
+
+
+class PingTimeoutRead(BaseModel):
+    id: int
+    device_id: UUID
+    device_name: Optional[str] = None
+    ip_address: Optional[str] = None
+    timestamp: datetime
+    probe_no: int
+    timeout_ms: int
+    reason_code: str
+    incident_id: Optional[UUID] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

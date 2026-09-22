@@ -1,4 +1,4 @@
-from pydantic import BaseModel, IPvAnyAddress, field_validator
+from pydantic import BaseModel, Field, IPvAnyAddress, field_validator
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -104,3 +104,9 @@ class DeviceBulkImportResult(BaseModel):
     total: int
     created: int
     errors: List[str]
+
+class DeviceBulkDeleteRequest(BaseModel):
+    device_ids: List[UUID] = Field(..., min_length=1, max_length=100)
+
+class DeviceBulkDeleteResult(BaseModel):
+    deleted: int

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, Row, Col, Table, Spinner, Alert, Badge, Stat } from '../components/bic';
-import { MdArrowBack, MdEdit, MdWarning, MdCheckCircle, MdSpeed, MdAccessTime, MdInfo } from 'react-icons/md';
+import { MdArrowBack, MdEdit, MdWarning, MdCheckCircle, MdSpeed, MdAccessTime, MdInfo, MdHistory } from 'react-icons/md';
 import { get } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
 import dayjs from 'dayjs';
@@ -36,6 +36,8 @@ export default function DeviceDetailPage() {
   const [metrics, setMetrics] = useState(null);
   const [history, setHistory] = useState([]);
   const [incidents, setIncidents] = useState([]);
+  const [timeoutLogs, setTimeoutLogs] = useState([]);
+  const [timeoutSummary, setTimeoutSummary] = useState(null);
   const [chartMetric, setChartMetric] = useState('latency');
   const [timeRange, setTimeRange] = useState(24); // hours: 1, 24, 168 (7 days)
   const [loading, setLoading] = useState(true);
@@ -46,10 +48,12 @@ export default function DeviceDetailPage() {
       setLoading(true);
       setError(null);
       
-      const [devRes, metRes, incRes] = await Promise.all([
+      const [devRes, metRes, incRes, timeoutRes, timeoutSummaryRes] = await Promise.all([
         get(`/devices/${id}`),
         get(`/devices/${id}/metrics`),
         get(`/devices/${id}/incidents?page=1&page_size=10`),
+        get(`/devices/${id}/ping-timeouts?page=1&page_size=8&hours=168`),
+        get(`/devices/${id}/ping-timeouts/summary`),
       ]);
 
       // For 1h use raw history; for 24h/7d use server-side time buckets.
@@ -80,6 +84,8 @@ export default function DeviceDetailPage() {
       setMetrics(metRes.data);
       setHistory(histData);
       setIncidents(incRes.data.data || []);
+      setTimeoutLogs(timeoutRes.data.data || []);
+      setTimeoutSummary(timeoutSummaryRes.data || null);
     } catch (err) {
       console.error("Failed to load device details", err);
       setError(err.response?.data?.detail || "Failed to load device details");
@@ -355,6 +361,26 @@ export default function DeviceDetailPage() {
                     </tr>
                   )}
                 </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col lg={6}>
+          <Card className="bic-h-full">
+            <Card.Header>
+              <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2"><MdHistory /> Recent Ping Timeouts</h2>
+              <Link to="/ping-timeouts" className="bic-btn bic-btn-secondary bic-btn-sm">View Full History</Link>
+            </Card.Header>
+            <Card.Body className="bic-p-0">
+              <div className="bic-flex bic-gap-4 bic-p-4 bic-text-sm bic-text-secondary">
+                <span>24h: <strong className="bic-text-primary">{timeoutSummary?.timeouts_last_24h ?? 0}</strong></span>
+                <span>7d: <strong className="bic-text-primary">{timeoutSummary?.timeouts_last_7d ?? 0}</strong></span>
+                <span>Last: <strong className="bic-text-primary">{timeoutSummary?.last_timeout ? dayjs(timeoutSummary.last_timeout).format('HH:mm:ss') : '—'}</strong></span>
+              </div>
+              <Table responsive hover className="bic-mb-0">
+                <thead><tr><th>Timestamp</th><th>Probe</th><th>Timeout</th><th>Reason</th></tr></thead>
+                <tbody>{timeoutLogs.length ? timeoutLogs.slice(0, 8).map(log => <tr key={log.id}><td className="bic-text-sm">{dayjs(log.timestamp).format('YYYY-MM-DD HH:mm:ss')}</td><td>{log.probe_no}</td><td>{log.timeout_ms} ms</td><td className="bic-text-sm">{log.reason_code}</td></tr>) : <tr><td colSpan="4" className="bic-empty">No timeout evidence recorded.</td></tr>}</tbody>
               </Table>
             </Card.Body>
           </Card>

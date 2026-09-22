@@ -5,14 +5,15 @@
   justify-content: center;
   gap: var(--bic-space-2);
   min-height: var(--bic-control-height);
-  padding: 7px var(--bic-space-3);
+  padding: 6px var(--bic-space-4);
   border: 1px solid transparent;
   border-radius: var(--bic-radius-md);
   cursor: pointer;
-  font-size: var(--bic-font-size-sm);
-  font-weight: 600;
+  font-size: var(--bic-font-size-md);
+  font-weight: 500;
+  line-height: 1.5;
   text-decoration: none;
-  transition: all var(--bic-transition);
+  transition: var(--bic-transition);
 }
 
 .bic-btn:hover { text-decoration: none; }
@@ -21,33 +22,54 @@
 .bic-btn-primary {
   background: var(--bic-primary);
   color: var(--bic-text-inverse);
+  border-color: var(--bic-primary);
 }
-.bic-btn-primary:hover { background: var(--bic-primary-hover); }
+.bic-btn-primary:hover {
+  background: var(--bic-primary-hover);
+  border-color: var(--bic-primary-hover);
+  color: var(--bic-text-inverse);
+}
 
 .bic-btn-secondary {
   background: var(--bic-bg-surface);
   color: var(--bic-text-primary);
   border-color: var(--bic-border-strong);
 }
-.bic-btn-secondary:hover { background: var(--bic-bg-muted); }
+.bic-btn-secondary:hover {
+  background: var(--bic-bg-muted);
+  border-color: var(--bic-secondary);
+  color: var(--bic-text-primary);
+}
 
 .bic-btn-danger {
   background: var(--bic-danger);
+  color: var(--bic-text-inverse);
+  border-color: var(--bic-danger);
+}
+.bic-btn-danger:hover {
+  filter: brightness(.9);
   color: var(--bic-text-inverse);
 }
 
 .bic-btn-sm {
   min-height: var(--bic-control-height-sm);
-  padding: var(--bic-space-1) var(--bic-space-3);
-  font-size: var(--bic-font-size-sm);
+  padding: 3px var(--bic-space-3);
+  font-size: var(--bic-font-size-xs);
+  border-radius: var(--bic-radius-sm);
 }
 
 /* Cards */
 .bic-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
   background: var(--bic-bg-surface);
   border: 1px solid var(--bic-border);
   border-radius: var(--bic-radius-md);
   box-shadow: var(--bic-shadow-sm);
+  margin-bottom: var(--bic-space-5);
 }
 
 .bic-card-header,
@@ -57,39 +79,69 @@
 }
 
 .bic-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--bic-space-3);
+  background: transparent;
   border-bottom: 1px solid var(--bic-border);
+  border-top-left-radius: var(--bic-radius-md);
+  border-top-right-radius: var(--bic-radius-md);
+}
+
+.bic-card-header:first-child {
+  border-radius: var(--bic-radius-md) var(--bic-radius-md) 0 0;
+}
+
+.bic-card-body {
+  flex: 1 1 auto;
 }
 
 .bic-card-footer {
   border-top: 1px solid var(--bic-border);
-  background: var(--bic-bg-muted);
+  background: var(--bic-bg-surface-muted);
+  border-radius: 0 0 var(--bic-radius-md) var(--bic-radius-md);
 }
 
+.bic-card-footer:last-child {
+  border-radius: 0 0 var(--bic-radius-md) var(--bic-radius-md);
+}
+
+/* Stat / KPI Cards (AdminKit Dashboard Widgets) */
 .bic-stat {
   padding: var(--bic-space-5);
+  transition: var(--bic-transition);
 }
-.bic-stat-success { border-top: var(--bic-space-1) solid var(--bic-success); }
-.bic-stat-warning { border-top: var(--bic-space-1) solid var(--bic-warning); }
-.bic-stat-danger { border-top: var(--bic-space-1) solid var(--bic-danger); }
-.bic-stat-info { border-top: var(--bic-space-1) solid var(--bic-info); }
+
+.bic-stat-success { border-top: 3px solid var(--bic-success); }
+.bic-stat-warning { border-top: 3px solid var(--bic-warning); }
+.bic-stat-danger  { border-top: 3px solid var(--bic-danger); }
+.bic-stat-info    { border-top: 3px solid var(--bic-info); }
 
 .bic-stat-label {
   color: var(--bic-text-secondary);
-  font-size: var(--bic-font-size-sm);
+  font-size: var(--bic-font-size-xs);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: var(--bic-space-1);
 }
 
 .bic-stat-value {
-  margin-top: var(--bic-space-2);
+  margin-top: var(--bic-space-1);
   font-size: var(--bic-font-size-2xl);
   font-weight: 700;
+  color: var(--bic-text-primary);
+  line-height: 1.2;
   letter-spacing: -.02em;
 }
 
 .bic-stat-meta {
-  margin-top: var(--bic-space-1);
-  color: var(--bic-text-muted);
+  margin-top: var(--bic-space-2);
+  color: var(--bic-text-secondary);
   font-size: var(--bic-font-size-xs);
+  font-weight: 500;
 }
 
 /* Forms */
@@ -98,9 +150,10 @@
 }
 
 .bic-label {
-  display: block;
+  display: inline-block;
   margin-bottom: var(--bic-space-2);
-  font-weight: 600;
+  font-size: var(--bic-font-size-md);
+  font-weight: 500;
   color: var(--bic-text-primary);
 }
 
@@ -113,15 +166,19 @@
 .bic-control,
 .bic-select,
 .bic-textarea {
+  display: block;
   width: 100%;
   min-height: var(--bic-control-height);
-  padding: var(--bic-space-2) var(--bic-space-3);
-  border: 1px solid var(--bic-border-strong);
-  border-radius: var(--bic-radius-md);
+  padding: 6px var(--bic-space-3);
+  font-size: var(--bic-font-size-md);
+  font-weight: 400;
+  line-height: 1.5;
   color: var(--bic-text-primary);
   background: var(--bic-bg-surface);
+  border: 1px solid var(--bic-border-strong);
+  border-radius: var(--bic-radius-md);
   outline: none;
-  transition: border var(--bic-transition), box-shadow var(--bic-transition);
+  transition: var(--bic-transition);
 }
 
 .bic-textarea {
@@ -139,11 +196,16 @@
 /* Tables */
 .bic-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: inherit;
 }
 
 .bic-table {
   width: 100%;
+  margin-bottom: 0;
   border-collapse: collapse;
+  color: var(--bic-text-primary);
+  vertical-align: top;
 }
 
 .bic-table th,
@@ -155,25 +217,61 @@
 }
 
 .bic-table th {
-  background: var(--bic-bg-surface);
+  background: var(--bic-bg-surface-muted);
   color: var(--bic-text-secondary);
   font-size: var(--bic-font-size-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .04em;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+
+.bic-table th.bic-sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.bic-table th.bic-sortable-header::after {
+  content: '↕';
+  margin-inline-start: var(--bic-space-2);
+  color: var(--bic-text-secondary);
+  font-size: var(--bic-font-size-xs);
+}
+
+.bic-table th.bic-sortable-header.is-sort-asc::after {
+  content: '↑';
+  color: var(--bic-primary);
+}
+
+.bic-table th.bic-sortable-header.is-sort-desc::after {
+  content: '↓';
+  color: var(--bic-primary);
+}
+
+.bic-table th.bic-sortable-header:focus-visible {
+  outline: var(--bic-focus-ring);
+  outline-offset: var(--bic-space-1);
+}
+
+.bic-table tbody tr {
+  transition: background-color var(--bic-transition);
 }
 
 .bic-table tbody tr:hover {
   background: var(--bic-bg-muted);
 }
 
-/* Badges */
+/* Badges (AdminKit Soft Subtle Badges) */
 .bic-badge {
   display: inline-flex;
   align-items: center;
-  padding: var(--bic-space-1) var(--bic-space-2);
+  gap: var(--bic-space-1);
+  padding: 4px var(--bic-space-2);
   border-radius: var(--bic-radius-sm);
   font-size: var(--bic-font-size-xs);
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .bic-badge-success { background: var(--bic-success-soft); color: var(--bic-success); }
@@ -183,15 +281,20 @@
 
 /* Alerts */
 .bic-alert {
-  padding: var(--bic-space-3) var(--bic-space-4);
-  border: 0;
+  position: relative;
+  padding: var(--bic-space-4);
+  border: 1px solid transparent;
+  border-left-width: 4px;
   border-radius: var(--bic-radius-md);
   margin-bottom: var(--bic-space-4);
+  font-size: var(--bic-font-size-md);
+  line-height: 1.5;
 }
-.bic-alert-info { background: var(--bic-info-soft); color: var(--bic-info); border-color: var(--bic-info); }
+
+.bic-alert-info    { background: var(--bic-info-soft); color: var(--bic-info); border-color: var(--bic-info); }
 .bic-alert-success { background: var(--bic-success-soft); color: var(--bic-success); border-color: var(--bic-success); }
 .bic-alert-warning { background: var(--bic-warning-soft); color: var(--bic-warning); border-color: var(--bic-warning); }
-.bic-alert-danger { background: var(--bic-danger-soft); color: var(--bic-danger); border-color: var(--bic-danger); }
+.bic-alert-danger  { background: var(--bic-danger-soft); color: var(--bic-danger); border-color: var(--bic-danger); }
 
 /* Modal */
 .bic-modal-backdrop {
@@ -213,7 +316,7 @@
   max-height: 90vh;
   overflow: auto;
   background: var(--bic-bg-surface);
-  border-radius: var(--bic-radius-md);
+  border-radius: var(--bic-radius-lg);
   box-shadow: var(--bic-shadow-md);
 }
 
@@ -228,13 +331,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--bic-space-4);
 }
 
 .bic-modal-footer {
   border-top: 1px solid var(--bic-border);
+  background: var(--bic-bg-surface-muted);
   display: flex;
   justify-content: flex-end;
   gap: var(--bic-space-2);
+  flex-wrap: wrap;
 }
 
 /* Toolbar */
@@ -243,6 +349,24 @@
   gap: var(--bic-space-2);
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* Input and action controls kept within a shared field width. */
+.bic-input-group {
+  display: flex;
+  align-items: stretch;
+  gap: var(--bic-space-2);
+  width: 100%;
+}
+
+.bic-input-group .bic-control,
+.bic-input-group .bic-select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bic-input-group .bic-btn {
+  flex: 0 0 auto;
 }
 
 /* Empty state */
@@ -254,22 +378,21 @@
 
 .bic-icon-action {
   display: inline-grid;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   place-items: center;
   border: 1px solid var(--bic-border);
   border-radius: var(--bic-radius-md);
   background: var(--bic-bg-surface);
   color: var(--bic-text-secondary);
+  transition: var(--bic-transition);
 }
-.bic-icon-action:hover { color: var(--bic-primary); background: var(--bic-primary-soft); }
-.bic-icon-action-danger:hover { color: var(--bic-danger); background: var(--bic-danger-soft); }
+.bic-icon-action:hover { color: var(--bic-primary); background: var(--bic-primary-soft); border-color: var(--bic-primary-soft); }
+.bic-icon-action-danger:hover { color: var(--bic-danger); background: var(--bic-danger-soft); border-color: var(--bic-danger-soft); }
 
 /* Shared React component states */
 .bic-btn:disabled { opacity: var(--bic-disabled-opacity); cursor: not-allowed; }
-.bic-btn-danger:hover { filter: brightness(.9); }
-.bic-btn:focus-visible { box-shadow: var(--bic-focus-ring); }
 .bic-control:disabled, .bic-select:disabled, .bic-textarea:disabled {
   background: var(--bic-bg-muted);
   color: var(--bic-text-secondary);
@@ -292,12 +415,7 @@
 .bic-check label { cursor: pointer; }
 .bic-check-input:disabled + label { color: var(--bic-text-secondary); cursor: not-allowed; }
 .bic-form-group:last-child { margin-bottom: 0; }
-.bic-section-title { font-size: var(--bic-font-size-lg); }
-.bic-card { min-width: 0; }
-.bic-card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--bic-space-3); }
-.bic-card-header:first-child { border-radius: var(--bic-radius-lg) var(--bic-radius-lg) 0 0; }
-.bic-card-footer:last-child { border-radius: 0 0 var(--bic-radius-lg) var(--bic-radius-lg); }
-.bic-table-wrap { border-radius: inherit; }
+.bic-section-title { font-size: var(--bic-font-size-lg); font-weight: 600; color: var(--bic-text-primary); }
 .bic-table code { white-space: nowrap; }
 .bic-table .bic-text-right { text-align: right; white-space: nowrap; }
 .bic-table .bic-button-group { flex-wrap: nowrap; justify-content: flex-end; }
@@ -305,21 +423,18 @@
 .bic-table .bic-empty { padding: var(--bic-space-10); text-align: center; }
 .bic-table-note { min-width: var(--bic-scroll-height-sm); max-width: var(--bic-table-note-width); white-space: normal; overflow-wrap: anywhere; }
 .bic-detail-label { width: var(--bic-detail-column-width); }
-.bic-badge { gap: var(--bic-space-1); white-space: nowrap; }
 .bic-status { display: inline-flex; align-items: center; gap: var(--bic-space-1); flex-wrap: wrap; }
 .bic-icon { width: var(--bic-icon-size); height: var(--bic-icon-size); flex-shrink: 0; vertical-align: middle; }
 .bic-page-title { overflow-wrap: anywhere; flex-wrap: wrap; }
 .bic-page-title .bic-icon { width: var(--bic-icon-size-lg); height: var(--bic-icon-size-lg); }
 .bic-page-header > *, .bic-topbar > * { min-width: 0; }
 .bic-button-group, .bic-pagination { display: flex; align-items: center; gap: var(--bic-space-2); flex-wrap: wrap; }
-.bic-button-group-sm .bic-btn { min-height: var(--bic-control-height-sm); padding: var(--bic-space-1) var(--bic-space-3); font-size: var(--bic-font-size-sm); }
+.bic-button-group-sm .bic-btn { min-height: var(--bic-control-height-sm); padding: 3px var(--bic-space-3); font-size: var(--bic-font-size-xs); }
 
 /* Native dialogs provide focus containment, Escape and focus restoration. */
 dialog.bic-modal { padding: 0; border: 1px solid var(--bic-border); color: var(--bic-text-primary); width: min(calc(100% - var(--bic-space-8)), var(--bic-modal-width)); }
 dialog.bic-modal-lg { width: min(calc(100% - var(--bic-space-8)), var(--bic-modal-width-lg)); }
 dialog.bic-modal::backdrop { background: var(--bic-backdrop); }
-.bic-modal-header { gap: var(--bic-space-4); }
-.bic-modal-footer { flex-wrap: wrap; }
 
 /* Loading, scrollable content and diagnostic payloads */
 .bic-loading { display: inline-flex; align-items: center; vertical-align: middle; }
@@ -341,9 +456,62 @@ dialog.bic-modal::backdrop { background: var(--bic-backdrop); }
 .bic-menu-toggle, .bic-sidebar-dismiss, .bic-sidebar-overlay { display: none; }
 .bic-sidebar-overlay { position: fixed; inset: 0; border: 0; background: var(--bic-backdrop); z-index: var(--bic-z-overlay); }
 .bic-dropdown { position: relative; }
-.bic-dropdown > summary { list-style: none; }
+.bic-dropdown > summary { list-style: none; cursor: pointer; }
 .bic-dropdown > summary::-webkit-details-marker { display: none; }
-.bic-dropdown-menu { position: absolute; top: calc(100% + var(--bic-space-2)); right: 0; min-width: var(--bic-scroll-height); padding: var(--bic-space-4); border: 1px solid var(--bic-border); border-radius: var(--bic-radius-md); box-shadow: var(--bic-shadow-md); background: var(--bic-bg-surface); }
+.bic-account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bic-space-2);
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--bic-radius-md);
+  background: transparent;
+  color: var(--bic-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--bic-transition);
+}
+.bic-account-btn:hover { background: var(--bic-bg-muted); }
+.bic-account-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--bic-radius-pill);
+  background: var(--bic-primary);
+  color: var(--bic-text-inverse);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.bic-account-details {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+.bic-account-name {
+  font-size: var(--bic-font-size-md);
+  font-weight: 600;
+  color: var(--bic-text-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.bic-account-role {
+  font-size: var(--bic-font-size-xs);
+  font-weight: 400;
+  color: var(--bic-text-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.bic-account-chevron {
+  font-size: 16px;
+  color: var(--bic-text-muted);
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+.bic-dropdown-menu { position: absolute; top: calc(100% + var(--bic-space-2)); right: 0; min-width: var(--bic-scroll-height); padding: var(--bic-space-4); border: 1px solid var(--bic-border); border-radius: var(--bic-radius-md); box-shadow: var(--bic-shadow-md); background: var(--bic-bg-surface); z-index: var(--bic-z-topbar); }
 .bic-dropdown-name { margin: 0; color: var(--bic-text-primary); font-weight: 700; }
 .bic-dropdown-menu .bic-text-secondary { margin: 0 0 var(--bic-space-2); }
 .bic-dropdown-menu .bic-btn { margin-top: var(--bic-space-2); }
@@ -359,15 +527,14 @@ dialog.bic-modal::backdrop { background: var(--bic-backdrop); }
 }
 
 /* Authentication and non-blocking operation feedback */
-.bic-auth { min-height: 100vh; display: grid; place-items: center; padding: var(--bic-space-6); }
-.bic-auth-card { width: min(100%, var(--bic-login-width)); }
+.bic-auth { min-height: 100vh; display: grid; place-items: center; padding: var(--bic-space-6); background: var(--bic-bg-body); }
+.bic-auth-card { width: min(100%, var(--bic-login-width)); box-shadow: var(--bic-shadow-sm); border: 1px solid var(--bic-border); border-radius: var(--bic-radius-md); background: var(--bic-bg-surface); }
 .bic-auth-logo { height: var(--bic-login-logo-height); width: auto; object-fit: contain; margin-bottom: var(--bic-space-4); }
 .bic-notifications { position: fixed; top: calc(var(--bic-topbar-height) + var(--bic-space-4)); right: var(--bic-space-4); width: min(calc(100% - var(--bic-space-8)), var(--bic-notification-width)); z-index: var(--bic-z-notifications); }
 .bic-notification { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--bic-space-3); box-shadow: var(--bic-shadow-md); }
 .bic-notification > span { overflow-wrap: anywhere; min-width: 0; }
 
-/* Responsive column composition for forms and mixed-width card groups.
-   Breakpoints match the framework: mobile through 768px, wide above 1100px. */
+/* Responsive column composition for forms and mixed-width card groups. */
 .bic-row { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--bic-space-4); }
 .bic-col { grid-column: span 12; min-width: 0; }
 

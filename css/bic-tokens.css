@@ -1,47 +1,47 @@
 :root {
-  /* Brand */
+  /* AdminKit Brand Colors */
   --bic-primary: #3b7ddd;
-  --bic-primary-hover: #326abc;
-  --bic-primary-soft: #eaf2fd;
+  --bic-primary-hover: #2f64b1;
+  --bic-primary-soft: #d8e5f8;
   --bic-secondary: #6c757d;
   --bic-accent: #20c997;
 
-  /* Status */
-  --bic-success: #15803d;
-  --bic-success-soft: #ecfdf3;
-  --bic-warning: #b45309;
-  --bic-warning-soft: #fff7ed;
-  --bic-danger: #b91c1c;
-  --bic-danger-soft: #fef2f2;
-  --bic-info: #0369a1;
-  --bic-info-soft: #f0f9ff;
+  /* AdminKit Status Colors */
+  --bic-success: #1cbb8c;
+  --bic-success-soft: #d2f1e8;
+  --bic-warning: #fcb92c;
+  --bic-warning-soft: #fef1d5;
+  --bic-danger: #dc3545;
+  --bic-danger-soft: #f8d7da;
+  --bic-info: #17a2b8;
+  --bic-info-soft: #d1ecf1;
 
-  /* Neutral surfaces */
+  /* AdminKit Neutral Surfaces */
   --bic-bg-body: #f5f7fb;
   --bic-bg-surface: #ffffff;
-  --bic-bg-surface-muted: #f8fafc;
-  --bic-bg-sidebar: #293042;
-  --bic-bg-sidebar-hover: #3b465d;
-  --bic-bg-muted: #f8fafc;
+  --bic-bg-surface-muted: #f8f9fa;
+  --bic-bg-sidebar: #222e3c;
+  --bic-bg-sidebar-hover: #1e2835;
+  --bic-bg-muted: #f8f9fa;
 
-  /* Text */
-  --bic-text-primary: #343a40;
+  /* AdminKit Text Colors */
+  --bic-text-primary: #495057;
   --bic-text-secondary: #6c757d;
-  --bic-text-muted: #9b9b9b;
+  --bic-text-muted: #939ba2;
   --bic-text-inverse: #ffffff;
 
-  /* Borders */
-  --bic-border: #dee2e6;
+  /* AdminKit Borders */
+  --bic-border: #e9ecef;
   --bic-border-strong: #ced4da;
 
-  /* Typography */
-  --bic-font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  /* AdminKit Typography */
+  --bic-font-family: "Inter", "Helvetica Neue", Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --bic-font-size-xs: 12px;
   --bic-font-size-sm: 13px;
   --bic-font-size-md: 14px;
-  --bic-font-size-lg: 18px;
-  --bic-font-size-xl: 24px;
-  --bic-font-size-2xl: 30px;
+  --bic-font-size-lg: 17.5px;
+  --bic-font-size-xl: 24.5px;
+  --bic-font-size-2xl: 28px;
   --bic-line-height: 1.5;
 
   /* Spacing: 4px scale */
@@ -54,25 +54,26 @@
   --bic-space-8: 32px;
   --bic-space-10: 40px;
 
-  /* Shape */
+  /* AdminKit Shape / Border Radii */
   --bic-radius-sm: 2px;
   --bic-radius-md: 4px;
   --bic-radius-lg: 6px;
-  --bic-radius-pill: 999px;
+  --bic-radius-pill: 50rem;
 
-  /* Shadows */
-  --bic-shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, .075);
-  --bic-shadow-md: 0 .5rem 1rem rgba(0, 0, 0, .15);
+  /* AdminKit Shadows */
+  --bic-shadow-sm: 0 0.1rem 0.2rem rgba(0, 0, 0, .05);
+  --bic-shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, .15);
 
-  /* Layout */
-  --bic-sidebar-width: 250px;
-  --bic-topbar-height: 60px;
+  /* AdminKit Layout Dimensions */
+  --bic-sidebar-width: 260px;
+  --bic-topbar-height: 56px;
   --bic-content-max: 1600px;
   --bic-table-row-height: 48px;
 
-  /* Motion */
-  --bic-transition: 160ms ease;
+  /* AdminKit Motion */
+  --bic-transition: 150ms ease-in-out;
 
+  /* Aliased Variables */
   --bic-color-primary: var(--bic-primary);
   --bic-color-primary-hover: var(--bic-primary-hover);
   --bic-color-background: var(--bic-bg-body);
@@ -88,37 +89,37 @@
   --bic-color-danger: var(--bic-danger);
   --bic-color-info: var(--bic-info);
 
-  /* Shared component dimensions and states */
-  --bic-control-height: 40px;
-  --bic-control-height-sm: 32px;
+  /* AdminKit Shared Component Dimensions and States */
+  --bic-control-height: 38px;
+  --bic-control-height-sm: 30px;
   --bic-textarea-height: 110px;
   --bic-icon-size: 18px;
-  --bic-icon-size-lg: 24px;
-  --bic-logo-height: 36px;
-  --bic-login-logo-height: 64px;
-  --bic-login-width: 400px;
-  --bic-modal-width: 620px;
+  --bic-icon-size-lg: 22px;
+  --bic-logo-height: 34px;
+  --bic-login-logo-height: 54px;
+  --bic-login-width: 420px;
+  --bic-modal-width: 600px;
   --bic-modal-width-lg: 800px;
   --bic-chart-height: 280px;
   --bic-scroll-height: 200px;
   --bic-scroll-height-sm: 120px;
   --bic-code-height: 250px;
-  --bic-notification-width: 400px;
+  --bic-notification-width: 380px;
   --bic-detail-column-width: 35%;
   --bic-table-note-width: 250px;
   --bic-focus-width: 2px;
-  --bic-focus-offset: 3px;
-  --bic-focus-ring: 0 0 0 3px rgba(15, 76, 129, .12);
-  --bic-backdrop: rgba(15, 23, 42, .55);
-  --bic-sidebar-border: rgba(255, 255, 255, .08);
-  --bic-sidebar-mark: rgba(255, 255, 255, .12);
+  --bic-focus-offset: 2px;
+  --bic-focus-ring: 0 0 0 0.2rem rgba(59, 125, 221, .25);
+  --bic-backdrop: rgba(33, 37, 41, .6);
+  --bic-sidebar-border: rgba(255, 255, 255, .07);
+  --bic-sidebar-mark: rgba(59, 125, 221, .2);
   --bic-sidebar-active-indicator: var(--bic-primary);
-  --bic-sidebar-label: rgba(255, 255, 255, .65);
-  --bic-sidebar-link: rgba(255, 255, 255, .82);
-  --bic-topbar-surface: rgba(255, 255, 255, .96);
+  --bic-sidebar-label: rgba(233, 236, 239, .5);
+  --bic-sidebar-link: rgba(233, 236, 239, .7);
+  --bic-topbar-surface: #ffffff;
   --bic-topbar-eyebrow: var(--bic-text-muted);
-  --bic-disabled-opacity: .55;
-  --bic-spinner-duration: 800ms;
+  --bic-disabled-opacity: .6;
+  --bic-spinner-duration: 750ms;
   --bic-z-topbar: 900;
   --bic-z-overlay: 950;
   --bic-z-sidebar: 1000;

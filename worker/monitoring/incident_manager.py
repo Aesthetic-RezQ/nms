@@ -3,9 +3,10 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func, update
 
 from app.models.incident import Incident
+from app.models.ping_timeout_log import PingTimeoutLog
 from monitoring.notifications import WorkerNotifier
 from monitoring.dependency import DependencyResolver
 
@@ -56,6 +57,26 @@ class IncidentManager:
             db.add(incident)
             await db.commit()
             await db.refresh(incident)
+
+            # Correlate raw timeout evidence that led to this confirmed outage.
+            timeout_query = select(func.count(PingTimeoutLog.id)).where(
+                PingTimeoutLog.device_id == device_id,
+                PingTimeoutLog.incident_id.is_(None),
+                PingTimeoutLog.timestamp >= down_since_time,
+            )
+            timeout_count = (await db.execute(timeout_query)).scalar() or 0
+            if timeout_count:
+                await db.execute(
+                    update(PingTimeoutLog)
+                    .where(
+                        PingTimeoutLog.device_id == device_id,
+                        PingTimeoutLog.incident_id.is_(None),
+                        PingTimeoutLog.timestamp >= down_since_time,
+                    )
+                    .values(incident_id=incident.id)
+                )
+                incident.timeout_count = timeout_count
+                await db.commit()
 
             logger.info(
                 f"🚨 [INCIDENT OPENED] Device: {device_name} | Down Since: {down_since_time.strftime('%Y-%m-%d %H:%M:%S UTC')} | Incident ID: {incident.id}"

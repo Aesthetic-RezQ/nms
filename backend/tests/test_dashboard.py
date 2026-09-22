@@ -2,6 +2,7 @@ import pytest
 import uuid
 from datetime import datetime, timezone, timedelta
 from app.models.device import Device
+from app.models.category import Category
 from sqlalchemy.ext.asyncio import AsyncSession
 
 @pytest.mark.asyncio
@@ -69,3 +70,37 @@ async def test_dashboard_stale_detection(async_client, admin_headers, test_db: A
     
     assert data["worker_status"]["is_stale"] is True
     assert "DATA STALE" in data["worker_status"]["status_message"]
+
+@pytest.mark.asyncio
+async def test_get_dashboard_summary_filters_by_category(async_client, admin_headers, test_db: AsyncSession):
+    category = Category(name="Network Infrastructure")
+    test_db.add(category)
+    await test_db.commit()
+    await test_db.refresh(category)
+
+    selected_device = Device(
+        id=uuid.uuid4(),
+        device_name="Selected Device",
+        ip_address="10.0.0.10",
+        category_id=category.id,
+        current_status="UP",
+    )
+    other_device = Device(
+        id=uuid.uuid4(),
+        device_name="Other Device",
+        ip_address="10.0.0.11",
+        current_status="DOWN",
+    )
+    test_db.add_all([selected_device, other_device])
+    await test_db.commit()
+
+    res = await async_client.get(
+        f"/api/dashboard/summary?category_id={category.id}",
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
+
+    counts = res.json()["status_counts"]
+    assert counts["total"] == 1
+    assert counts["up"] == 1
+    assert counts["down"] == 0

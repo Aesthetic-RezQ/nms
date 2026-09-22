@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import List, Set
+from typing import List, Optional, Set
 
 from app.database import get_db, async_session_maker
 from app.models.device import Device
@@ -20,24 +20,25 @@ from app.api.deps import get_current_user
 logger = logging.getLogger("nms.api.dashboard")
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
-async def get_dashboard_summary_data(db: AsyncSession) -> dict:
+async def get_dashboard_summary_data(db: AsyncSession, category_id: Optional[int] = None) -> dict:
     # Import Category model for criticality lookup
     from app.models.category import Category
     from sqlalchemy import outerjoin
 
-    # 1. Overall Device Counts (all devices)
-    status_counts_res = await db.execute(
-        select(
-            func.count(Device.id).label("total"),
-            func.count(Device.id).filter(Device.current_status == "UP").label("up"),
-            func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
-            func.count(Device.id).filter(Device.current_status == "WARNING").label("warning"),
-            func.count(Device.id).filter(Device.current_status == "UNKNOWN").label("unknown"),
-            func.count(Device.id).filter(Device.current_status == "MAINTENANCE").label("maintenance"),
-            func.count(Device.id).filter(Device.current_status == "UNREACHABLE_PARENT_DOWN").label("unreachable_parent_down"),
-            func.max(Device.last_check).label("latest_check")
-        )
+    # 1. Overall Device Counts, optionally scoped to one category.
+    status_counts_query = select(
+        func.count(Device.id).label("total"),
+        func.count(Device.id).filter(Device.current_status == "UP").label("up"),
+        func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
+        func.count(Device.id).filter(Device.current_status == "WARNING").label("warning"),
+        func.count(Device.id).filter(Device.current_status == "UNKNOWN").label("unknown"),
+        func.count(Device.id).filter(Device.current_status == "MAINTENANCE").label("maintenance"),
+        func.count(Device.id).filter(Device.current_status == "UNREACHABLE_PARENT_DOWN").label("unreachable_parent_down"),
+        func.max(Device.last_check).label("latest_check")
     )
+    if category_id is not None:
+        status_counts_query = status_counts_query.where(Device.category_id == category_id)
+    status_counts_res = await db.execute(status_counts_query)
     counts_row = status_counts_res.first()
     
     total = counts_row.total if counts_row else 0
@@ -51,26 +52,26 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
 
     # 1b. Critical (infrastructure) vs Non-Critical (workstation) device counts
     # (Change2.md: exclude NON_CRITICAL from incident counters)
-    infra_counts_res = await db.execute(
-        select(
-            func.count(Device.id).label("total"),
-            func.count(Device.id).filter(Device.current_status == "UP").label("up"),
-            func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
-            func.count(Device.id).filter(Device.current_status == "WARNING").label("warning"),
-            func.count(Device.id).filter(Device.current_status == "UNREACHABLE_PARENT_DOWN").label("unreachable_parent_down"),
-        ).outerjoin(Category, Device.category_id == Category.id)
-        .where(Category.criticality != "NON_CRITICAL")
-    )
+    infra_counts_query = select(
+        func.count(Device.id).label("total"),
+        func.count(Device.id).filter(Device.current_status == "UP").label("up"),
+        func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
+        func.count(Device.id).filter(Device.current_status == "WARNING").label("warning"),
+        func.count(Device.id).filter(Device.current_status == "UNREACHABLE_PARENT_DOWN").label("unreachable_parent_down"),
+    ).outerjoin(Category, Device.category_id == Category.id).where(Category.criticality != "NON_CRITICAL")
+    if category_id is not None:
+        infra_counts_query = infra_counts_query.where(Device.category_id == category_id)
+    infra_counts_res = await db.execute(infra_counts_query)
     infra_row = infra_counts_res.first()
 
-    non_critical_counts_res = await db.execute(
-        select(
-            func.count(Device.id).label("total"),
-            func.count(Device.id).filter(Device.current_status == "UP").label("up"),
-            func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
-        ).outerjoin(Category, Device.category_id == Category.id)
-        .where(Category.criticality == "NON_CRITICAL")
-    )
+    non_critical_counts_query = select(
+        func.count(Device.id).label("total"),
+        func.count(Device.id).filter(Device.current_status == "UP").label("up"),
+        func.count(Device.id).filter(Device.current_status == "DOWN").label("down"),
+    ).outerjoin(Category, Device.category_id == Category.id).where(Category.criticality == "NON_CRITICAL")
+    if category_id is not None:
+        non_critical_counts_query = non_critical_counts_query.where(Device.category_id == category_id)
+    non_critical_counts_res = await db.execute(non_critical_counts_query)
     nc_row = non_critical_counts_res.first()
 
     infrastructure_counts = {
@@ -106,12 +107,15 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
 
     # 3. Overall 24h network availability
     since = now - timedelta(hours=24)
-    avail_res = await db.execute(
-        select(
-            func.count(MonitoringResult.id).label("total_checks"),
-            func.count(MonitoringResult.id).filter(MonitoringResult.status == "UP").label("up_checks")
-        ).where(MonitoringResult.checked_at >= since)
-    )
+    avail_query = select(
+        func.count(MonitoringResult.id).label("total_checks"),
+        func.count(MonitoringResult.id).filter(MonitoringResult.status == "UP").label("up_checks")
+    ).where(MonitoringResult.checked_at >= since)
+    if category_id is not None:
+        avail_query = avail_query.join(Device, MonitoringResult.device_id == Device.id).where(
+            Device.category_id == category_id
+        )
+    avail_res = await db.execute(avail_query)
     avail_row = avail_res.first()
     tot_chk = avail_row.total_checks if avail_row else 0
     up_chk = avail_row.up_checks if avail_row else 0
@@ -151,11 +155,12 @@ async def get_dashboard_summary_data(db: AsyncSession) -> dict:
 
 @router.get("/summary", response_model=DashboardSummaryResponse)
 async def get_dashboard_summary(
+    category_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """Fetch aggregated live dashboard summary, counts, worker health, and recent items."""
-    return await get_dashboard_summary_data(db)
+    return await get_dashboard_summary_data(db, category_id=category_id)
 
 # WebSocket Connection Manager
 class DashboardConnectionManager:

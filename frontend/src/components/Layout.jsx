@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { MdMenu, MdPerson, MdExpandMore } from 'react-icons/md';
+import { MdMenu, MdExpandMore } from 'react-icons/md';
 import Sidebar from './Sidebar';
 import { Button } from './bic';
 import { useAuth } from '../auth/AuthContext';
@@ -13,6 +13,18 @@ export default function Layout() {
   const location = useLocation();
   const pageName = location.pathname.split('/').filter(Boolean)[0] || 'dashboard';
   const pageLabel = pageName.replace(/-/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+
+  const displayName = user?.full_name || user?.username || 'User';
+  const initial = displayName.charAt(0).toUpperCase();
+  const getRoleLabel = (role) => {
+    if (!role) return 'User';
+    const upper = String(role).toUpperCase();
+    if (upper === 'ADMIN') return 'Administrator';
+    if (upper === 'OPERATOR') return 'Operator';
+    if (upper === 'VIEWER') return 'Viewer';
+    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  };
+  const userRole = getRoleLabel(user?.role);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -56,11 +68,18 @@ export default function Layout() {
             </div>
           </div>
           <details ref={account} className="bic-dropdown">
-            <summary className="bic-btn bic-btn-secondary"><MdPerson /> {user?.full_name || user?.username || 'User'} <MdExpandMore /></summary>
+            <summary className="bic-account-btn">
+              <span className="bic-account-avatar" aria-hidden="true">{initial}</span>
+              <span className="bic-account-details">
+                <span className="bic-account-name">{displayName}</span>
+                <span className="bic-account-role">{userRole}</span>
+              </span>
+              <MdExpandMore className="bic-account-chevron" />
+            </summary>
             <div className="bic-dropdown-menu">
-              <p className="bic-dropdown-name">{user?.full_name || user?.username}</p>
+              <p className="bic-dropdown-name">{displayName}</p>
               <p className="bic-text-secondary bic-text-sm">{user?.email}</p>
-              <p className="bic-text-secondary bic-text-sm">Role: {user?.role}</p>
+              <p className="bic-text-secondary bic-text-sm">Role: {userRole}</p>
               <Button variant="secondary" className="bic-w-full" onClick={logout}>Logout</Button>
             </div>
           </details>

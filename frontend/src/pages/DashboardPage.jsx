@@ -8,7 +8,11 @@ import dayjs from 'dayjs';
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [healthSummary, setHealthSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [healthLoading, setHealthLoading] = useState(false);
   const [error, setError] = useState('');
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef(null);
@@ -85,10 +89,75 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    const fetchCategories = async () => {
+      try {
+        const res = await get('/categories');
+        if (active) setCategories(res.data || []);
+      } catch (fetchError) {
+        console.error('Error fetching dashboard categories:', fetchError);
+      }
+    };
+
+    fetchCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!selectedCategoryId) {
+      setHealthSummary(null);
+      setHealthLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    const fetchFilteredHealth = async () => {
+      setHealthLoading(true);
+      try {
+        const res = await get(`/dashboard/summary?category_id=${encodeURIComponent(selectedCategoryId)}`);
+        if (active) {
+          setHealthSummary(res.data);
+          setError('');
+        }
+      } catch (fetchError) {
+        console.error('Error fetching filtered dashboard summary:', fetchError);
+        if (active) {
+          setHealthSummary(null);
+          setError('Unable to refresh network health. Please try again.');
+        }
+      } finally {
+        if (active) setHealthLoading(false);
+      }
+    };
+
+    fetchFilteredHealth();
+    const interval = setInterval(fetchFilteredHealth, 15000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [selectedCategoryId]);
+
   const counts = summary?.status_counts || { total: 0, up: 0, down: 0, warning: 0, unknown: 0, maintenance: 0, unreachable_parent_down: 0 };
   const infraCounts = summary?.infrastructure_counts || { total: 0, up: 0, down: 0, warning: 0 };
   const wsCounts = summary?.workstation_counts || { total: 0, up: 0, down: 0 };
+  const overviewSummary = selectedCategoryId ? healthSummary : summary;
+  const overviewCounts = overviewSummary?.status_counts || { total: 0, up: 0, down: 0, warning: 0, unknown: 0, maintenance: 0, unreachable_parent_down: 0 };
+  const overviewInfraCounts = overviewSummary?.infrastructure_counts || { total: 0, up: 0, down: 0, warning: 0 };
   const workerStatus = summary?.worker_status;
+
+  const handleCategoryChange = (event) => {
+    setSelectedCategoryId(event.target.value);
+    setHealthSummary(null);
+  };
 
   return (
     <div>
@@ -196,26 +265,42 @@ export default function DashboardPage() {
               <h2 className="bic-section-title bic-mb-0 bic-flex bic-items-center bic-gap-2">
                 <MdSpeed className="bic-text-brand" /> Network Health Overview
               </h2>
-              <span className="bic-badge bic-badge-info">24-Hour Metrics</span>
+              <div className="bic-flex bic-items-center bic-gap-3">
+                <span className="bic-badge bic-badge-info">24-Hour Metrics</span>
+                <label htmlFor="dashboard-category-filter" className="bic-text-sm bic-font-semibold">Category</label>
+                <select
+                  id="dashboard-category-filter"
+                  className="bic-select"
+                  value={selectedCategoryId}
+                  onChange={handleCategoryChange}
+                  aria-label="Filter network health overview by category"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+                {healthLoading && <Spinner size="sm" label="Loading category overview" />}
+              </div>
             </Card.Header>
             <Card.Body className="bic-flex bic-flex-column bic-justify-center">
               <Row className="bic-text-center bic-my-auto">
                 <Col sm={4}>
                   <div className="bic-stat-label">Overall Availability</div>
-                  <div className={`bic-stat-value bic-font-bold ${summary?.overall_availability_24h < 99 ? 'bic-text-warning' : 'bic-text-success'}`}>
-                    {summary?.overall_availability_24h !== undefined ? `${summary.overall_availability_24h}%` : '—'}
+                  <div className={`bic-stat-value bic-font-bold ${overviewSummary?.overall_availability_24h < 99 ? 'bic-text-warning' : 'bic-text-success'}`}>
+                    {overviewSummary?.overall_availability_24h !== undefined ? `${overviewSummary.overall_availability_24h}%` : '—'}
                   </div>
                 </Col>
                 <Col sm={4}>
                   <div className="bic-stat-label">Healthy Devices</div>
                   <div className="bic-stat-value bic-font-bold bic-text-brand">
-                    {counts.up} <span className="bic-text-lg bic-text-secondary">/ {counts.total}</span>
+                    {overviewSummary ? overviewCounts.up : '—'} <span className="bic-text-lg bic-text-secondary">/ {overviewSummary ? overviewCounts.total : '—'}</span>
                   </div>
                 </Col>
                 <Col sm={4}>
                   <div className="bic-stat-label">Critical Incidents</div>
-                  <div className={`bic-stat-value bic-font-bold ${infraCounts.down > 0 ? 'bic-text-danger' : 'bic-text-secondary'}`}>
-                    {infraCounts.down}
+                  <div className={`bic-stat-value bic-font-bold ${overviewInfraCounts.down > 0 ? 'bic-text-danger' : 'bic-text-secondary'}`}>
+                    {overviewSummary ? overviewInfraCounts.down : '—'}
                   </div>
                 </Col>
               </Row>

@@ -1,18 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { MdDashboard, MdDevices, MdCategory, MdGroupWork, MdLocationOn, MdWarning, MdBuild, MdSettings, MdSecurity, MdPeople } from 'react-icons/md';
+import { MdDashboard, MdDevices, MdCategory, MdGroupWork, MdLocationOn, MdWarning, MdBuild, MdSettings, MdSecurity, MdPeople, MdHistory } from 'react-icons/md';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from './bic';
 
 const operations = [
-  ['/devices', 'Devices', MdDevices], ['/incidents', 'Incidents', MdWarning],
-  ['/maintenance', 'Maintenance', MdBuild], ['/categories', 'Categories', MdCategory],
-  ['/groups', 'Groups', MdGroupWork], ['/locations', 'Locations', MdLocationOn],
+  ['/devices', 'Devices', MdDevices],
+  ['/ping-timeouts', 'Ping Timeout Audit', MdHistory],
+];
+const managedOperations = [
+  ['/incidents', 'Incidents', MdWarning], ['/maintenance', 'Maintenance', MdBuild],
+  ['/categories', 'Categories', MdCategory], ['/groups', 'Groups', MdGroupWork], ['/locations', 'Locations', MdLocationOn],
 ];
 const administration = [['/users', 'Users', MdPeople], ['/audit-logs', 'Audit Logs', MdSecurity], ['/settings', 'Settings', MdSettings]];
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isOperator } = useAuth();
   const sidebar = useRef(null);
   useEffect(() => {
     if (!isOpen) return;
@@ -46,7 +49,6 @@ export default function Sidebar({ isOpen, onClose }) {
       <img src="/logo.jpg" alt="BIC" className="bic-brand-logo" />
       <span className="bic-brand-copy">
         <strong className="bic-brand-name">NMS</strong>
-        <span className="bic-brand-subtitle">Network Monitoring</span>
       </span>
     </div>
     <div className="bic-sidebar-heading"><strong>Navigation</strong><Button variant="secondary" size="sm" onClick={onClose}>Close</Button></div>
@@ -55,6 +57,7 @@ export default function Sidebar({ isOpen, onClose }) {
       {link(['/', 'Dashboard', MdDashboard])}
       <div className="bic-nav-section">Operations</div>
       {operations.map(link)}
+      {isOperator && managedOperations.map(link)}
       {isAdmin && <><div className="bic-nav-section">Administration</div>{administration.map(link)}</>}
     </nav>
   </aside>;

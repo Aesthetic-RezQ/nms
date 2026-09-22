@@ -1,15 +1,21 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_, update
+from sqlalchemy import delete, select, func, or_, update
 from app.models.device import Device
 from app.models.category import Category
 from app.models.group import DeviceGroup
 from app.models.location import Location
+from app.models.incident import Incident
+from app.models.maintenance import maintenance_devices
+from app.models.monitoring_result import MonitoringResult
+from app.models.notification_log import NotificationLog
+from app.models.ping_timeout_log import PingTimeoutLog
 from app.schemas.device import DeviceCreate, DeviceUpdate, DeviceListFilter
 from app.core.exceptions import DuplicateException, NotFoundException, ValidationException
 from uuid import UUID
 import math
 import csv
 import io
+import ipaddress
 from typing import Optional
 
 class DeviceService:
@@ -145,38 +151,148 @@ class DeviceService:
         device = result.scalars().first()
         if not device:
             raise NotFoundException("Device not found")
-            
-        await db.execute(update(Device).where(Device.parent_device_id == device_id).values(parent_device_id=None))
-        await db.delete(device)
+
+        await DeviceService._delete_device_records(db, device)
         await db.commit()
 
     @staticmethod
+    async def _delete_device_records(db: AsyncSession, device: Device):
+        """Remove device-owned records before deleting a device row."""
+        device_id = device.id
+        # Remove device-owned records explicitly. This keeps deletion reliable for
+        # databases created before every foreign-key cascade was introduced.
+        await db.execute(delete(PingTimeoutLog).where(PingTimeoutLog.device_id == device_id))
+        await db.execute(delete(MonitoringResult).where(MonitoringResult.device_id == device_id))
+        await db.execute(delete(maintenance_devices).where(maintenance_devices.c.device_id == device_id))
+        await db.execute(
+            update(NotificationLog)
+            .where(NotificationLog.device_id == device_id)
+            .values(device_id=None)
+        )
+        await db.execute(delete(Incident).where(Incident.device_id == device_id))
+        await db.execute(update(Device).where(Device.parent_device_id == device_id).values(parent_device_id=None))
+        await db.delete(device)
+
+    @staticmethod
+    async def bulk_delete(db: AsyncSession, device_ids: list[UUID]) -> int:
+        unique_ids = list(dict.fromkeys(device_ids))
+        result = await db.execute(select(Device).where(Device.id.in_(unique_ids)))
+        devices = result.scalars().all()
+        if len(devices) != len(unique_ids):
+            raise NotFoundException("One or more selected devices were not found")
+
+        for device in devices:
+            await DeviceService._delete_device_records(db, device)
+
+        await db.commit()
+        return len(devices)
+
+    @staticmethod
+    async def _get_or_create_named_entity(db: AsyncSession, model, name: Optional[str], cache: dict):
+        """Resolve a CSV name to a related record, creating it when necessary."""
+        if not name:
+            return None
+
+        normalized_name = name.strip()
+        if not normalized_name:
+            return None
+
+        cache_key = normalized_name.casefold()
+        if cache_key in cache:
+            return cache[cache_key]
+
+        result = await db.execute(
+            select(model).where(func.lower(model.name) == cache_key)
+        )
+        entity = result.scalars().first()
+        if not entity:
+            entity = model(name=normalized_name)
+            db.add(entity)
+            await db.flush()
+
+        cache[cache_key] = entity
+        return entity
+
+    @staticmethod
     async def bulk_import(db: AsyncSession, csv_content: str):
-        reader = csv.DictReader(io.StringIO(csv_content))
+        reader = csv.DictReader(io.StringIO(csv_content.lstrip("\ufeff")))
         total = 0
         created = 0
         errors = []
+        category_cache = {}
+        group_cache = {}
+        location_cache = {}
+
+        if not reader.fieldnames:
+            return {
+                "total": total,
+                "created": created,
+                "errors": ["CSV file must include a header row"],
+            }
         
-        for row in reader:
+        for raw_row in reader:
             total += 1
             try:
+                row = {
+                    (key or "").strip().casefold(): (value or "").strip()
+                    for key, value in raw_row.items()
+                }
                 ip = row.get('ip_address')
                 name = row.get('device_name')
                 if not ip or not name:
                     errors.append(f"Row {total}: Missing required fields (device_name, ip_address)")
+                    continue
+
+                try:
+                    ipaddress.IPv4Address(ip)
+                except ValueError:
+                    errors.append(f"Row {total}: Invalid IPv4 address {ip}")
                     continue
                     
                 ip_check = await db.execute(select(Device).where(Device.ip_address == ip))
                 if ip_check.scalars().first():
                     errors.append(f"Row {total}: IP address {ip} already exists")
                     continue
+
+                vlan_id = None
+                if row.get('vlan_id'):
+                    try:
+                        vlan_id = int(row['vlan_id'])
+                    except ValueError:
+                        errors.append(f"Row {total}: VLAN ID must be a whole number")
+                        continue
+
+                category = await DeviceService._get_or_create_named_entity(
+                    db,
+                    Category,
+                    row.get('category') or row.get('category_name'),
+                    category_cache,
+                )
+                group = await DeviceService._get_or_create_named_entity(
+                    db,
+                    DeviceGroup,
+                    row.get('group') or row.get('group_name'),
+                    group_cache,
+                )
+                location = await DeviceService._get_or_create_named_entity(
+                    db,
+                    Location,
+                    row.get('location') or row.get('location_name'),
+                    location_cache,
+                )
                     
                 device = Device(
                     device_name=name,
                     ip_address=ip,
-                    hostname=row.get('hostname'),
-                    description=row.get('description'),
-                    current_status='UNKNOWN'
+                    hostname=row.get('hostname') or None,
+                    description=row.get('description') or None,
+                    category_id=category.id if category else None,
+                    group_id=group.id if group else None,
+                    location_id=location.id if location else None,
+                    vlan_id=vlan_id,
+                    vlan_name=row.get('vlan_name') or None,
+                    subnet=row.get('subnet') or None,
+                    current_status='UNKNOWN',
                 )
                 db.add(device)
                 created += 1
@@ -192,7 +308,14 @@ class DeviceService:
         devices = result['data']
         
         output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=['device_name', 'ip_address', 'hostname', 'category_name', 'group_name', 'location_name', 'current_status'])
+        writer = csv.DictWriter(
+            output,
+            fieldnames=[
+                'device_name', 'ip_address', 'hostname', 'category', 'group',
+                'location', 'vlan_id', 'vlan_name', 'subnet', 'description',
+                'current_status',
+            ],
+        )
         writer.writeheader()
         
         for device in devices:
@@ -200,10 +323,14 @@ class DeviceService:
                 'device_name': device['device_name'],
                 'ip_address': device['ip_address'],
                 'hostname': device['hostname'] or '',
-                'category_name': device['category_name'] or '',
-                'group_name': device['group_name'] or '',
-                'location_name': device['location_name'] or '',
-                'current_status': device['current_status']
+                'category': device['category_name'] or '',
+                'group': device['group_name'] or '',
+                'location': device['location_name'] or '',
+                'vlan_id': device['vlan_id'] or '',
+                'vlan_name': device['vlan_name'] or '',
+                'subnet': device['subnet'] or '',
+                'description': device['description'] or '',
+                'current_status': device['current_status'],
             })
             
         return output.getvalue()

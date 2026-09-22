@@ -16,6 +16,7 @@ class IncidentRead(BaseModel):
     down_since: datetime
     recovered_at: Optional[datetime] = None
     duration_seconds: Optional[int] = None
+    timeout_count: int = 0
     duration_formatted: Optional[str] = None
     
     failure_reason: Optional[str] = None

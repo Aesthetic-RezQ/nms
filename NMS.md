@@ -8,6 +8,16 @@
 **Target Environment:** Internal Corporate Local Area Network  
 **Target Scale:** 200–500+ Devices
 
+## Current implementation status — 2026-09
+
+The repository has progressed beyond the initial foundation plan. The current
+implementation includes CentralAuth integration, FastAPI/React/Docker Compose
+deployment, asynchronous ICMP monitoring, incident and notification lifecycle
+handling, dashboard analytics, timeout evidence auditing, retention cleanup, and
+the operational device-management features described below. [README.md](README.md)
+contains the runbook; [CHANGELOG.md](CHANGELOG.md) records the latest release
+scope.
+
 ---
 
 # 1. PRODUCT OVERVIEW
@@ -244,6 +254,7 @@ Administrators must be able to:
 - Add device
 - Edit device
 - Delete device
+- Select and bulk-delete devices (administrator only, maximum 100 IDs per request)
 - Disable monitoring
 - Enable monitoring
 - Search device
@@ -289,6 +300,10 @@ IP address must be unique unless future architecture explicitly supports multipl
 Validate IPv4 addresses before saving.
 
 Prepare architecture for IPv6 support later.
+
+Bulk deletion must require administrator authorization, confirm the selected
+device count in the UI, write an audit record, and remove or detach dependent
+monitoring, incident, maintenance, notification, and child-device records safely.
 
 ---
 
@@ -877,6 +892,10 @@ Device Name
 
 Allow combined filters.
 
+The implemented dashboard category dropdown defaults to all devices. When a
+category is selected, the overview cards and status summary are calculated only
+for that category.
+
 Example:
 
 ```text
@@ -946,6 +965,11 @@ Last 30 Days
 Avoid unlimited raw ping history retention.
 
 Implement configurable retention/downsampling strategy.
+
+The current worker enforces the configured raw monitoring-result retention and
+raw ping-timeout evidence retention in bounded cleanup batches. The seeded
+defaults are 7 days for raw monitoring results, 30 days for aggregate-retention
+configuration, and 365 days for raw timeout evidence.
 
 Example:
 
@@ -1060,15 +1084,22 @@ POST   /api/auth/login
 POST   /api/auth/logout
 
 GET    /api/dashboard
+GET    /api/dashboard/summary?category_id={id}
 
 GET    /api/devices
 POST   /api/devices
 GET    /api/devices/{id}
 PUT    /api/devices/{id}
 DELETE /api/devices/{id}
+DELETE /api/devices/bulk
 
 GET    /api/devices/{id}/history
 GET    /api/devices/{id}/incidents
+
+GET    /api/ping-timeouts
+GET    /api/devices/{id}/ping-timeouts
+GET    /api/devices/{id}/ping-timeouts/summary
+GET    /api/incidents/{id}/ping-timeouts
 
 GET    /api/incidents
 GET    /api/incidents/{id}
@@ -1138,6 +1169,11 @@ Dashboard immediately changes status.
 
 Require authentication.
 
+Production authentication is delegated to CentralAuth. NMS does not connect to
+the CentralAuth database and receives identity, application access, and
+permissions through the CentralAuth API. Browser sessions use secure,
+HttpOnly-cookie configuration when deployed behind TLS.
+
 Initial roles:
 
 ```text
@@ -1201,6 +1237,7 @@ Track at minimum:
 Device Added
 Device Deleted
 Device Modified
+Devices Bulk Deleted
 Monitoring Disabled
 Maintenance Enabled
 Incident Acknowledged
@@ -1462,7 +1499,10 @@ The MVP is considered functional when:
 19. Device dependency can suppress downstream alerts.
 20. Dashboard can filter by status/category/group/location/VLAN.
 21. Monitoring worker failure does not mark all devices DOWN.
-22. Important administrative actions are audited.
+22. Dashboard defaults to all categories and supports category-scoped overview data.
+23. Administrators can select and bulk-delete devices with confirmation and audit logging.
+24. Raw monitoring results and timeout evidence are cleaned up according to retention settings.
+25. Important administrative actions are audited.
 
 ---
 

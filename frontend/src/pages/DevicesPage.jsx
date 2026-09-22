@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Form, Row, Col, Card, Badge, Modal, Alert, Spinner } from '../components/bic';
 import { MdAdd, MdDelete, MdEdit, MdFileDownload, MdFileUpload, MdVisibility, MdCheckCircle, MdError } from 'react-icons/md';
@@ -19,6 +19,10 @@ export default function DevicesPage() {
   
   const [filters, setFilters] = useState({ status: '', category_id: '', group_id: '', location_id: '', search: '' });
   const [deleteId, setDeleteId] = useState(null);
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState([]);
+  const [bulkDeletePending, setBulkDeletePending] = useState(false);
+  const [deletingSelected, setDeletingSelected] = useState(false);
+  const selectAllRef = useRef(null);
   
   // CSV Import State
   const [showImportModal, setShowImportModal] = useState(false);
@@ -49,6 +53,7 @@ export default function DevicesPage() {
 
   const fetchDevices = async () => {
     setLoading(true);
+    setSelectedDeviceIds([]);
     try {
       let query = new URLSearchParams();
       if (filters.status) query.append('status', filters.status);
@@ -113,6 +118,7 @@ export default function DevicesPage() {
       setImportResult(res.data);
       toast.success(`Import completed: ${res.data.created} devices imported.`);
       fetchDevices();
+      fetchMetadata();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'CSV import failed');
     } finally {
@@ -126,9 +132,46 @@ export default function DevicesPage() {
       toast.success('Device deleted successfully');
       fetchDevices();
     } catch (error) {
-      toast.error('Failed to delete device');
+      toast.error(error.response?.data?.detail || 'Failed to delete device');
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const allDevicesSelected = devices.length > 0 && devices.every(device => selectedDeviceIds.includes(device.id));
+  const someDevicesSelected = devices.some(device => selectedDeviceIds.includes(device.id));
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someDevicesSelected && !allDevicesSelected;
+    }
+  }, [someDevicesSelected, allDevicesSelected]);
+
+  const toggleDeviceSelection = (deviceId) => {
+    setSelectedDeviceIds(current => (
+      current.includes(deviceId)
+        ? current.filter(id => id !== deviceId)
+        : [...current, deviceId]
+    ));
+  };
+
+  const handleSelectAll = (event) => {
+    setSelectedDeviceIds(event.target.checked ? devices.map(device => device.id) : []);
+  };
+
+  const handleDeleteSelected = async () => {
+    setDeletingSelected(true);
+    try {
+      const response = await del('/devices/bulk', {
+        data: { device_ids: selectedDeviceIds },
+      });
+      toast.success(`${response.data.deleted} devices deleted successfully`);
+      setBulkDeletePending(false);
+      fetchDevices();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete selected devices');
+    } finally {
+      setDeletingSelected(false);
     }
   };
 
@@ -145,6 +188,9 @@ export default function DevicesPage() {
           </Button>
           {isAdmin && (
             <>
+              <Button variant="danger" onClick={() => setBulkDeletePending(true)} disabled={selectedDeviceIds.length === 0}>
+                <MdDelete className="bic-mr-1" /> Delete Selected{selectedDeviceIds.length > 0 ? ` (${selectedDeviceIds.length})` : ''}
+              </Button>
               <Button variant="secondary" onClick={() => { setShowImportModal(true); setImportResult(null); setImportFile(null); }}>
                 <MdFileUpload className="bic-mr-1" /> Import CSV
               </Button>
@@ -207,6 +253,22 @@ export default function DevicesPage() {
         <Table responsive hover className="bic-mb-0">
           <thead>
             <tr>
+              {isAdmin && (
+                <th data-sortable="false" className="bic-pl-4">
+                  <div className="bic-check bic-justify-center">
+                    <input
+                      ref={selectAllRef}
+                      id="select-all-devices"
+                      type="checkbox"
+                      className="bic-check-input"
+                      checked={allDevicesSelected}
+                      onChange={handleSelectAll}
+                      aria-label="Select all visible devices"
+                    />
+                    <label htmlFor="select-all-devices" className="bic-sr-only">Select all visible devices</label>
+                  </div>
+                </th>
+              )}
               <th className="bic-pl-4">Status</th>
               <th>Device Name</th>
               <th>IP Address</th>
@@ -220,12 +282,29 @@ export default function DevicesPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="9" className="bic-empty">Loading devices...</td></tr>
+              <tr><td colSpan={isAdmin ? 10 : 9} className="bic-empty">Loading devices...</td></tr>
             ) : devices.length === 0 ? (
-              <tr><td colSpan="9" className="bic-empty">No devices found matching filter.</td></tr>
+              <tr><td colSpan={isAdmin ? 10 : 9} className="bic-empty">No devices found matching filter.</td></tr>
             ) : (
               devices.map(dev => (
                 <tr key={dev.id}>
+                  {isAdmin && (
+                    <td className="bic-pl-4">
+                      <div className="bic-check bic-justify-center">
+                        <input
+                          id={`select-device-${dev.id}`}
+                          type="checkbox"
+                          className="bic-check-input"
+                          checked={selectedDeviceIds.includes(dev.id)}
+                          onChange={() => toggleDeviceSelection(dev.id)}
+                          aria-label={`Select ${dev.device_name || dev.name}`}
+                        />
+                        <label htmlFor={`select-device-${dev.id}`} className="bic-sr-only">
+                          Select {dev.device_name || dev.name}
+                        </label>
+                      </div>
+                    </td>
+                  )}
                   <td className="bic-pl-4">
                     <StatusBadge status={dev.current_status || dev.status} />
                   </td>
@@ -282,7 +361,7 @@ export default function DevicesPage() {
         </Modal.Header>
         <Modal.Body>
           <p className="bic-text-secondary bic-text-sm">
-            Upload a CSV file containing columns: <code>device_name, ip_address, hostname, category, group, location, vlan_id, subnet</code>.
+            Upload a CSV file containing columns: <code>device_name, ip_address, hostname, category, group, location, vlan_id, subnet</code>. Category, group, and location names are matched to existing records or created when missing.
           </p>
 
           <Form.Group className="bic-mb-4">
@@ -322,6 +401,16 @@ export default function DevicesPage() {
         message="Are you sure you want to delete this device? Historical monitoring results and active incidents will be removed."
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
+      />
+
+      <ConfirmDialog
+        show={bulkDeletePending}
+        title="Delete Selected Devices"
+        message={`Are you sure you want to delete ${selectedDeviceIds.length} selected device${selectedDeviceIds.length === 1 ? '' : 's'}? Historical monitoring results and active incidents will be removed.`}
+        onConfirm={handleDeleteSelected}
+        onCancel={() => { if (!deletingSelected) setBulkDeletePending(false); }}
+        confirmLabel={deletingSelected ? 'Deleting...' : 'Delete Selected'}
+        confirmDisabled={deletingSelected}
       />
     </div>
   );

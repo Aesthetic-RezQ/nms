@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
 from sqlalchemy import String, Text, ForeignKey, Boolean, Integer, DateTime, Index
 from sqlalchemy.dialects.postgresql import UUID
 from app.models.base import Base, TimestampMixin
@@ -17,6 +17,7 @@ class Incident(Base, TimestampMixin):
     down_since: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     recovered_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     duration_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    timeout_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     
     failure_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     notification_status: Mapped[str] = mapped_column(String(50), default="PENDING", nullable=False)
@@ -27,7 +28,7 @@ class Incident(Base, TimestampMixin):
     
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    device = relationship("Device", backref="incidents")
+    device = relationship("Device", backref=backref("incidents", passive_deletes=True))
     acknowledged_by = relationship("User", foreign_keys=[acknowledged_by_id])
 
     __table_args__ = (

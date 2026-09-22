@@ -4,7 +4,7 @@ from app.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.api import (
     auth, users, categories, groups, locations, devices,
-    settings as settings_api, health, monitoring, incidents, dashboard, notifications, maintenance
+    settings as settings_api, health, monitoring, incidents, dashboard, notifications, maintenance, ping_timeouts
 )
 import logging
 
@@ -45,6 +45,9 @@ app.include_router(notifications.router)
 app.include_router(maintenance.router)
 app.include_router(settings_api.router)
 app.include_router(settings_api.audit_router)
+app.include_router(ping_timeouts.router)
+app.include_router(ping_timeouts.device_router)
+app.include_router(ping_timeouts.incident_router)
 
 @app.on_event("startup")
 async def startup_event():
@@ -64,6 +67,7 @@ async def startup_event():
                 from sqlalchemy import text
                 await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS central_user_id VARCHAR(36)"))
                 await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_central_user_id ON users (central_user_id)"))
+                await conn.execute(text("ALTER TABLE incidents ADD COLUMN IF NOT EXISTS timeout_count INTEGER NOT NULL DEFAULT 0"))
                 # Parent/dependency suppression uses a descriptive status value
                 # longer than the original MVP varchar(20) column. Only alter
                 # legacy installations; repeating ALTER TABLE on every startup
@@ -115,6 +119,10 @@ async def startup_event():
             # Seed default system settings
             for k, v, t in [
                 ("default_monitoring_interval", "15", "integer"),
+                ("down_monitoring_interval", "60", "integer"),
+                ("long_down_threshold_minutes", "15", "integer"),
+                ("long_down_monitoring_interval", "300", "integer"),
+                ("ping_timeout_retention_days", "365", "integer"),
                 ("default_ping_timeout", "2", "integer"),
                 ("default_failure_threshold", "3", "integer"),
                 ("default_recovery_threshold", "2", "integer"),

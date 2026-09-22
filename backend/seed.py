@@ -54,6 +54,10 @@ async def seed():
                 
         settings_data = [
             ("default_monitoring_interval", "15", "integer"),
+            ("down_monitoring_interval", "60", "integer"),
+            ("long_down_threshold_minutes", "15", "integer"),
+            ("long_down_monitoring_interval", "300", "integer"),
+            ("ping_timeout_retention_days", "365", "integer"),
             ("default_ping_timeout", "2", "integer"),
             ("default_failure_threshold", "3", "integer"),
             ("default_recovery_threshold", "2", "integer"),

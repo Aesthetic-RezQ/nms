@@ -17,6 +17,7 @@ import LocationsPage from './pages/LocationsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import SettingsPage from './pages/SettingsPage';
 import UsersPage from './pages/UsersPage';
+import PingTimeoutAuditPage from './pages/PingTimeoutAuditPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="devices/:id" element={<DeviceDetailPage />} />
             <Route path="devices/:id/edit" element={<DeviceFormPage />} />
             <Route path="incidents" element={<IncidentsPage />} />
+            <Route path="ping-timeouts" element={<PingTimeoutAuditPage />} />
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="groups" element={<GroupsPage />} />
