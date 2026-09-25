@@ -570,13 +570,16 @@ dialog.bic-modal::backdrop { background: var(--bic-backdrop); }
   flex-shrink: 0;
   margin-left: 2px;
 }
-.bic-dropdown-menu { position: absolute; top: calc(100% + var(--bic-space-2)); right: 0; min-width: var(--bic-scroll-height); padding: var(--bic-space-4); border: 1px solid var(--bic-border); border-radius: var(--bic-radius-md); box-shadow: var(--bic-shadow-md); background: var(--bic-bg-surface); z-index: var(--bic-z-topbar); }
+.bic-dropdown-menu { position: absolute; top: calc(100% + var(--bic-space-2)); right: 0; min-width: var(--bic-scroll-height); padding: var(--bic-space-3); border: 1px solid var(--bic-border); border-radius: var(--bic-radius-md); box-shadow: var(--bic-shadow-md); background: var(--bic-bg-surface); z-index: var(--bic-z-topbar); }
+.bic-dropdown-item { display: flex; align-items: center; gap: var(--bic-space-2); width: 100%; padding: 6px var(--bic-space-3); color: var(--bic-text-primary); text-decoration: none; font-size: var(--bic-font-size-md); font-weight: 400; border-radius: var(--bic-radius-sm); background: transparent; border: 0; cursor: pointer; transition: var(--bic-transition); white-space: nowrap; }
+.bic-dropdown-item:hover, .bic-dropdown-item.is-active { background: var(--bic-primary-soft); color: var(--bic-primary); text-decoration: none; }
+.bic-dropdown-divider { height: 1px; margin: var(--bic-space-2) 0; background: var(--bic-border); border: 0; }
 .bic-dropdown-name { margin: 0; color: var(--bic-text-primary); font-weight: 700; }
 .bic-dropdown-menu .bic-text-secondary { margin: 0 0 var(--bic-space-2); }
 .bic-dropdown-menu .bic-btn { margin-top: var(--bic-space-2); }
 .bic-skip-link { position: fixed; top: var(--bic-space-2); left: var(--bic-space-2); z-index: var(--bic-z-notifications); transform: translateY(-200%); }
 .bic-skip-link:focus { transform: translateY(0); }
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .bic-menu-toggle, .bic-sidebar-dismiss { display: inline-flex; }
   .bic-sidebar-overlay { display: block; }
   .bic-sidebar-heading { display: flex; align-items: center; justify-content: space-between; padding: var(--bic-space-3) var(--bic-space-4); }
