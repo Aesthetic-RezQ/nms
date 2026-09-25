@@ -30,8 +30,8 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
 }
 
-h1 { font-size: var(--bic-font-size-2xl); font-weight: 700; }
-h2 { font-size: var(--bic-font-size-xl); font-weight: 600; }
+h1 { font-size: var(--bic-font-size-2xl); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: var(--bic-font-size-xl); font-weight: 600; letter-spacing: -0.01em; }
 h3 { font-size: var(--bic-font-size-lg); font-weight: 600; }
 h4, h5, h6 { font-size: var(--bic-font-size-md); font-weight: 600; }
 
@@ -67,7 +67,7 @@ img {
 hr {
   border: 0;
   border-top: 1px solid var(--bic-border);
-  margin: var(--bic-space-6) 0;
+  margin: var(--bic-space-5) 0;
   opacity: 1;
 }
 

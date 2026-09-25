@@ -1,47 +1,47 @@
 :root {
-  /* AdminKit Brand Colors */
-  --bic-primary: #3b7ddd;
-  --bic-primary-hover: #2f64b1;
-  --bic-primary-soft: #d8e5f8;
-  --bic-secondary: #6c757d;
-  --bic-accent: #20c997;
+  /* Tabler.io Brand Colors */
+  --bic-primary: #206bc4;
+  --bic-primary-hover: #1858a3;
+  --bic-primary-soft: #e6f0fa;
+  --bic-secondary: #626976;
+  --bic-accent: #2fb344;
 
-  /* AdminKit Status Colors */
-  --bic-success: #1cbb8c;
-  --bic-success-soft: #d2f1e8;
-  --bic-warning: #fcb92c;
-  --bic-warning-soft: #fef1d5;
-  --bic-danger: #dc3545;
-  --bic-danger-soft: #f8d7da;
-  --bic-info: #17a2b8;
-  --bic-info-soft: #d1ecf1;
+  /* Tabler.io Status Colors */
+  --bic-success: #2fb344;
+  --bic-success-soft: #eaf7ec;
+  --bic-warning: #f76707;
+  --bic-warning-soft: #fef3e6;
+  --bic-danger: #d63939;
+  --bic-danger-soft: #fbebeb;
+  --bic-info: #4299e1;
+  --bic-info-soft: #ecf5fc;
 
-  /* AdminKit Neutral Surfaces */
-  --bic-bg-body: #f5f7fb;
+  /* Tabler.io Neutral Surfaces */
+  --bic-bg-body: #f6f8fb;
   --bic-bg-surface: #ffffff;
-  --bic-bg-surface-muted: #f8f9fa;
-  --bic-bg-sidebar: #222e3c;
-  --bic-bg-sidebar-hover: #1e2835;
-  --bic-bg-muted: #f8f9fa;
+  --bic-bg-surface-muted: #f8fafc;
+  --bic-bg-sidebar: #182433;
+  --bic-bg-sidebar-hover: #1e2f42;
+  --bic-bg-muted: #f8fafc;
 
-  /* AdminKit Text Colors */
-  --bic-text-primary: #495057;
-  --bic-text-secondary: #6c757d;
-  --bic-text-muted: #939ba2;
+  /* Tabler.io Text Colors */
+  --bic-text-primary: #182433;
+  --bic-text-secondary: #626976;
+  --bic-text-muted: #8b97a2;
   --bic-text-inverse: #ffffff;
 
-  /* AdminKit Borders */
-  --bic-border: #e9ecef;
-  --bic-border-strong: #ced4da;
+  /* Tabler.io Borders */
+  --bic-border: #e6e8eb;
+  --bic-border-strong: #cbd5e1;
 
-  /* AdminKit Typography */
-  --bic-font-family: "Inter", "Helvetica Neue", Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  /* Tabler.io Typography */
+  --bic-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --bic-font-size-xs: 12px;
   --bic-font-size-sm: 13px;
   --bic-font-size-md: 14px;
-  --bic-font-size-lg: 17.5px;
-  --bic-font-size-xl: 24.5px;
-  --bic-font-size-2xl: 28px;
+  --bic-font-size-lg: 16px;
+  --bic-font-size-xl: 20px;
+  --bic-font-size-2xl: 24px;
   --bic-line-height: 1.5;
 
   /* Spacing: 4px scale */
@@ -54,24 +54,24 @@
   --bic-space-8: 32px;
   --bic-space-10: 40px;
 
-  /* AdminKit Shape / Border Radii */
-  --bic-radius-sm: 2px;
-  --bic-radius-md: 4px;
-  --bic-radius-lg: 6px;
-  --bic-radius-pill: 50rem;
+  /* Tabler.io Shape / Border Radii */
+  --bic-radius-sm: 4px;
+  --bic-radius-md: 6px;
+  --bic-radius-lg: 8px;
+  --bic-radius-pill: 100px;
 
-  /* AdminKit Shadows */
-  --bic-shadow-sm: 0 0.1rem 0.2rem rgba(0, 0, 0, .05);
-  --bic-shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, .15);
+  /* Tabler.io Shadows */
+  --bic-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --bic-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
 
-  /* AdminKit Layout Dimensions */
-  --bic-sidebar-width: 260px;
-  --bic-topbar-height: 56px;
+  /* Tabler.io Layout Dimensions */
+  --bic-sidebar-width: 250px;
+  --bic-topbar-height: 58px;
   --bic-content-max: 1600px;
-  --bic-table-row-height: 48px;
+  --bic-table-row-height: 44px;
 
-  /* AdminKit Motion */
-  --bic-transition: 150ms ease-in-out;
+  /* Tabler.io Motion */
+  --bic-transition: all 0.15s ease-in-out;
 
   /* Aliased Variables */
   --bic-color-primary: var(--bic-primary);
@@ -89,16 +89,16 @@
   --bic-color-danger: var(--bic-danger);
   --bic-color-info: var(--bic-info);
 
-  /* AdminKit Shared Component Dimensions and States */
+  /* Tabler.io Shared Component Dimensions and States */
   --bic-control-height: 38px;
   --bic-control-height-sm: 30px;
   --bic-textarea-height: 110px;
   --bic-icon-size: 18px;
   --bic-icon-size-lg: 22px;
-  --bic-logo-height: 34px;
-  --bic-login-logo-height: 54px;
-  --bic-login-width: 420px;
-  --bic-modal-width: 600px;
+  --bic-logo-height: 32px;
+  --bic-login-logo-height: 48px;
+  --bic-login-width: 440px;
+  --bic-modal-width: 580px;
   --bic-modal-width-lg: 800px;
   --bic-chart-height: 280px;
   --bic-scroll-height: 200px;
@@ -109,16 +109,16 @@
   --bic-table-note-width: 250px;
   --bic-focus-width: 2px;
   --bic-focus-offset: 2px;
-  --bic-focus-ring: 0 0 0 0.2rem rgba(59, 125, 221, .25);
-  --bic-backdrop: rgba(33, 37, 41, .6);
-  --bic-sidebar-border: rgba(255, 255, 255, .07);
-  --bic-sidebar-mark: rgba(59, 125, 221, .2);
+  --bic-focus-ring: 0 0 0 0.25rem rgba(32, 107, 196, 0.25);
+  --bic-backdrop: rgba(24, 36, 51, 0.65);
+  --bic-sidebar-border: rgba(255, 255, 255, 0.08);
+  --bic-sidebar-mark: rgba(32, 107, 196, 0.16);
   --bic-sidebar-active-indicator: var(--bic-primary);
-  --bic-sidebar-label: rgba(233, 236, 239, .5);
-  --bic-sidebar-link: rgba(233, 236, 239, .7);
+  --bic-sidebar-label: rgba(255, 255, 255, 0.45);
+  --bic-sidebar-link: rgba(255, 255, 255, 0.7);
   --bic-topbar-surface: #ffffff;
   --bic-topbar-eyebrow: var(--bic-text-muted);
-  --bic-disabled-opacity: .6;
+  --bic-disabled-opacity: 0.6;
   --bic-spinner-duration: 750ms;
   --bic-z-topbar: 900;
   --bic-z-overlay: 950;

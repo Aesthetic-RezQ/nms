@@ -169,16 +169,16 @@
 .bic-page-title {
   margin-bottom: var(--bic-space-1);
   font-size: var(--bic-font-size-2xl);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--bic-text-primary);
 }
 
 .bic-page-kicker {
   margin: 0 0 var(--bic-space-1);
-  color: var(--bic-primary);
+  color: var(--bic-text-secondary);
   font-size: var(--bic-font-size-xs);
   font-weight: 600;
-  letter-spacing: .08em;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 

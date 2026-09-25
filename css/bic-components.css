@@ -108,7 +108,7 @@
   border-radius: 0 0 var(--bic-radius-md) var(--bic-radius-md);
 }
 
-/* Stat / KPI Cards (AdminKit Dashboard Widgets) */
+/* Stat / KPI Cards (Tabler.io Dashboard Widgets) */
 .bic-stat {
   padding: var(--bic-space-5);
   transition: var(--bic-transition);
@@ -261,7 +261,7 @@
   background: var(--bic-bg-muted);
 }
 
-/* Badges (AdminKit Soft Subtle Badges) */
+/* Badges (Tabler.io Soft Subtle Badges) */
 .bic-badge {
   display: inline-flex;
   align-items: center;
