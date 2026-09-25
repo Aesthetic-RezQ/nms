@@ -226,10 +226,22 @@ Pagination.Item = function PageItem({ active, ...props }) {
 Pagination.Prev = props => <Button variant="secondary" size="sm" aria-label="Previous page" {...props}>Previous</Button>;
 Pagination.Next = props => <Button variant="secondary" size="sm" aria-label="Next page" {...props}>Next</Button>;
 
-export function Stat({ label, value, meta, tone }) {
-  return <div className={classes('bic-card', 'bic-stat', tone && `bic-stat-${tone}`)}>
-    <div className="bic-stat-label">{label}</div>
-    <div className={classes('bic-stat-value', tone && `bic-text-${tone}`)}>{value}</div>
-    {meta && <div className="bic-stat-meta">{meta}</div>}
-  </div>;
+export function Stat({ label, value, meta, tone, icon: Icon, className }) {
+  return (
+    <div className={classes('bic-card', 'bic-stat', tone && `bic-stat-${tone}`, className)}>
+      <div className="bic-stat-inner">
+        <div className="bic-stat-content">
+          <div className="bic-stat-label">{label}</div>
+          <div className={classes('bic-stat-value', tone && `bic-text-${tone}`)}>{value}</div>
+          {meta && <div className="bic-stat-meta">{meta}</div>}
+        </div>
+        {Icon && (
+          <div className={classes('bic-stat-avatar', tone && `bic-stat-avatar-${tone}`)}>
+            <Icon />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
+

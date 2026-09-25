@@ -110,9 +110,39 @@
 
 /* Stat / KPI Cards (Tabler.io Dashboard Widgets) */
 .bic-stat {
-  padding: var(--bic-space-5);
+  padding: var(--bic-space-4) var(--bic-space-5);
   transition: var(--bic-transition);
 }
+
+.bic-stat-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bic-space-3);
+}
+
+.bic-stat-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bic-stat-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--bic-radius-md);
+  background: var(--bic-primary-soft);
+  color: var(--bic-primary);
+  font-size: var(--bic-font-size-xl);
+  flex-shrink: 0;
+}
+
+.bic-stat-avatar-success { background: var(--bic-success-soft); color: var(--bic-success); }
+.bic-stat-avatar-warning { background: var(--bic-warning-soft); color: var(--bic-warning); }
+.bic-stat-avatar-danger  { background: var(--bic-danger-soft); color: var(--bic-danger); }
+.bic-stat-avatar-info    { background: var(--bic-info-soft); color: var(--bic-info); }
 
 .bic-stat-success { border-top: 3px solid var(--bic-success); }
 .bic-stat-warning { border-top: 3px solid var(--bic-warning); }
@@ -278,6 +308,35 @@
 .bic-badge-warning { background: var(--bic-warning-soft); color: var(--bic-warning); }
 .bic-badge-danger  { background: var(--bic-danger-soft); color: var(--bic-danger); }
 .bic-badge-info    { background: var(--bic-info-soft); color: var(--bic-info); }
+
+.bic-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--bic-radius-pill);
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.bic-status-dot-animated {
+  position: relative;
+}
+
+.bic-status-dot-animated::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--bic-radius-pill);
+  background: inherit;
+  opacity: 0.75;
+  animation: bic-status-pulse 1.5s infinite;
+}
+
+@keyframes bic-status-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  70% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(0.95); opacity: 0; }
+}
 
 /* Alerts */
 .bic-alert {

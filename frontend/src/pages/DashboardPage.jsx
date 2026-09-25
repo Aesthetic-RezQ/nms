@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, Row, Col, Table, Alert, Badge, Button, Spinner, Stat } from '../components/bic';
-import { MdSpeed, MdWarning, MdCheckCircle, MdError, MdRefresh, MdArrowForward, MdWifiTethering } from 'react-icons/md';
+import { MdSpeed, MdWarning, MdCheckCircle, MdError, MdRefresh, MdArrowForward, MdWifiTethering, MdDevices, MdHelpOutline, MdBuild, MdAltRoute, MdComputer } from 'react-icons/md';
 import { get } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
 import dayjs from 'dayjs';
@@ -169,7 +169,7 @@ export default function DashboardPage() {
             Network Dashboard
             {wsConnected && (
               <Badge bg="success">
-                <MdWifiTethering /> Live
+                <span className="bic-status-dot bic-status-dot-animated" /> Live
               </Badge>
             )}
           </h1>
@@ -193,14 +193,14 @@ export default function DashboardPage() {
       )}
 
       <div className="bic-grid bic-grid-4 bic-mb-6">
-        <Stat label="Total Devices" value={summary ? counts.total : '—'} />
-        <Stat label="UP" value={summary ? counts.up : '—'} tone="success" />
-        <Stat label="DOWN (Critical)" value={summary ? infraCounts.down : '—'} tone="danger" />
-        <Stat label="Warning" value={summary ? counts.warning : '—'} tone="warning" />
-        <Stat label="Unknown" value={summary ? counts.unknown : '—'} tone="info" />
-        <Stat label="Maintenance" value={summary ? counts.maintenance : '—'} tone="info" />
-        <Stat label="Parent Down" value={summary ? counts.unreachable_parent_down : '—'} tone="warning" />
-        <Stat label="Workstations" value={summary ? wsCounts.up + ' / ' + wsCounts.total : '—'} meta={summary ? 'Offline: ' + wsCounts.down : undefined} />
+        <Stat label="Total Devices" value={summary ? counts.total : '—'} icon={MdDevices} />
+        <Stat label="UP" value={summary ? counts.up : '—'} tone="success" icon={MdCheckCircle} />
+        <Stat label="DOWN (Critical)" value={summary ? infraCounts.down : '—'} tone="danger" icon={MdError} />
+        <Stat label="Warning" value={summary ? counts.warning : '—'} tone="warning" icon={MdWarning} />
+        <Stat label="Unknown" value={summary ? counts.unknown : '—'} tone="info" icon={MdHelpOutline} />
+        <Stat label="Maintenance" value={summary ? counts.maintenance : '—'} tone="info" icon={MdBuild} />
+        <Stat label="Parent Down" value={summary ? counts.unreachable_parent_down : '—'} tone="warning" icon={MdAltRoute} />
+        <Stat label="Workstations" value={summary ? wsCounts.up + ' / ' + wsCounts.total : '—'} meta={summary ? 'Offline: ' + wsCounts.down : undefined} icon={MdComputer} />
       </div>
 
       {/* Main Content Grid */}
